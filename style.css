@@ -791,7 +791,7 @@ img {
 }
 
 .services__description {
-  font-size: var(--small-font-size);
+  font-size: var(--normal-font-size); /* Updated for better readability */
   color: var(--text-color-light);
   letter-spacing: 0.05em;
 }
@@ -799,6 +799,9 @@ img {
 @media (min-width: 1150px) {
   .services__container {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .services__description {
+    font-size: var(--normal-font-size); /* Ensures consistency with root variable */
   }
 }
 
