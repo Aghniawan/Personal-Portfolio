@@ -661,6 +661,37 @@ img {
   transform: scale(1.05);
 }
 
+.videos__data {
+  padding: 0.75rem 0.5rem 0.25rem 0.5rem;
+  width: 100%;
+  text-align: left;
+}
+
+.videos__title {
+  font-size: var(--normal-font-size);
+  font-weight: var(--font-semi-bold);
+  color: var(--title-color);
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.05em;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s ease;
+}
+
+.videos__card:hover .videos__title {
+  color: var(--accent-color-light);
+}
+
+.videos__date {
+  font-size: var(--smaller-font-size);
+  color: var(--text-color-light);
+  opacity: 0.8;
+  display: block;
+}
+
 /*=============== WORKS & VIDEOS BREAKPOINTS ===============*/
 @media (max-width: 1150px) {
   .videos__container {
