@@ -1,331 +1,2823 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!--=============== FAVICON ===============-->
-    <link rel="shortcut icon" href="browser-icon.jpg" type="image/jpeg">
-    <!--=============== REMIXICONS ===============-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.min.css">
-    <!--=============== CSS ===============-->
-    <link rel="stylesheet" href="style.css">
-    <title>Muhammad Farhan Aghniawan - Portfolio</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Dashboard keuangan pribadi Muhammad Farhan Aghniawan – pantau saldo, pemasukan, pengeluaran, dan tabungan dalam satu halaman." />
+  <title>Financial Dashboard – Muhammad Farhan Aghniawan</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       DESIGN TOKENS – Monochrome Background with Vibrant Contents
+    ═══════════════════════════════════════════════════════════ */
+    :root {
+      /* ── Monochrome Background & Surfaces ── */
+      --mono-50 : #F7F7F7;
+      --mono-100: #EDEDED;
+      --mono-200: #D9D9D9;
+      --mono-300: #C0C0C0;
+      --mono-400: #A0A0A0;
+      --mono-500: #787878;
+      --mono-600: #555555;
+      --mono-700: #383838;
+      --mono-800: #222222;
+      --mono-900: #111111;
+
+      --pal-lightest : #F0F0F0;
+      --pal-light    : #D4D4D4;
+      --pal-mid      : #909090;
+      --pal-dark     : #555555;
+
+      /* ── Vibrant Accents for Content ── */
+      --accent-green : #00c885;
+      --accent-red   : #ff4d6d;
+      --accent-orange: #ff9f1c;
+      --accent-blue  : #00b4d8;
+      --accent-purple: #9d4edd;
+
+      /* ── Dark Mode Backgrounds (Monochrome Base) ── */
+      --bg-base      : #121212;
+      --bg-surface   : #1C1C1E;
+      --bg-card      : #242428;
+      --bg-card-hover: #2C2C32;
+      --border-color : rgba(255, 255, 255, 0.08);
+      --text-primary : #F0F0F0;
+      --text-secondary: #A0A0A0;
+      --text-muted   : #6B7280;
+      --shadow-card  : 0 4px 24px rgba(0,0,0,0.5);
+      --glow-mono    : 0 0 20px rgba(255, 255, 255, 0.06);
+
+      /* ── Typography ── */
+      --font-base: 'Outfit', sans-serif;
+
+      /* ── Transitions ── */
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── Light Mode Overrides (Monochrome Base) ── */
+    [data-theme="light"] {
+      --accent-green : #00875a;
+      --accent-red   : #dc2626;
+      --accent-blue  : #0077b6;
+      --accent-orange: #d97706;
+      --accent-purple: #7b2cbf;
+      --bg-base      : #F4F4F5;
+      --bg-surface   : #E4E4E7;
+      --bg-card      : #D4D4D8;
+      --bg-card-hover: #CBD5E1;
+      --border-color : rgba(0, 0, 0, 0.10);
+      --text-primary : #18181B;
+      --text-secondary: #3F3F46;
+      --text-muted   : #71717A;
+      --shadow-card  : 0 4px 24px rgba(0,0,0,0.12);
+      --glow-mono    : 0 0 20px rgba(0,0,0,0.06);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-base);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: var(--transition);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LAYOUT SHELL
+    ═══════════════════════════════════════════════════════════ */
+    .app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ═══════════════════════════════════════════════════════════
+       HAMBURGER DRAWER NAV
+    ═══════════════════════════════════════════════════════════ */
+
+    /* Overlay backdrop */
+    .nav-overlay {
+      position: fixed; inset: 0;
+      background: rgba(28, 24, 20, 0.55);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .nav-overlay.open { opacity: 1; pointer-events: all; }
+
+    /* Drawer panel */
+    .nav-drawer {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 340px;
+      max-width: 85vw;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      transform: translateX(-100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 4px 0 32px rgba(0,0,0,0.35);
+    }
+    .nav-drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 36px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .drawer-logo {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+      border: 2px solid var(--mono-500);
+      background: var(--bg-surface);
+    }
+    .drawer-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .drawer-brand {
+      font-size: 14px; font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    .drawer-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+
+    .drawer-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: var(--font-base);
+      font-size: 14px;
+      font-weight: 500;
+      width: 100%;
+      text-align: left;
+    }
+    .drawer-item:hover {
+      background: var(--bg-card);
+      color: var(--text-secondary);
+    }
+    .drawer-item.active {
+      background: linear-gradient(135deg, var(--mono-600), var(--mono-800));
+      color: var(--pal-lightest);
+      font-weight: 600;
+    }
+    .drawer-item svg {
+      width: 20px; height: 20px; flex-shrink: 0;
+    }
+
+    /* Hamburger button */
+    .burger-btn {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+    .burger-btn:hover { background: var(--bg-card-hover); color: var(--mono-300); border-color: var(--mono-500); }
+    .burger-line {
+      width: 18px; height: 2px;
+      background: currentColor;
+      border-radius: 2px;
+      transition: var(--transition);
+    }
+
+    /* ── Main Content (no left margin – full width) ── */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top Bar ── */
+    .topbar {
+      min-height: 90px;
+      height: auto;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      position: sticky; top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar-avatar {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      border: 2px solid var(--mono-500);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px;
+      color: var(--pal-lightest);
+      flex-shrink: 0;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+    .topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .topbar-info { flex: 1; }
+    .topbar-greeting { font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+    .topbar-name     { color: var(--accent-blue); font-weight: 700; transition: var(--transition); }
+    .topbar-quote    { font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+    .topbar-actions { display: flex; gap: 10px; }
+
+    .icon-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition);
+    }
+    .icon-btn:hover { background: var(--bg-card-hover); color: var(--mono-300); border-color: var(--mono-500); }
+    .icon-btn svg { width: 18px; height: 18px; }
+    #icon-theme-dark  { color: #ff9f1c; stroke: #ff9f1c; }
+    #icon-theme-light { color: #4f46e5; stroke: #4f46e5; }
+
+    /* ── Page Container ── */
+    .page-container { padding: 28px 0; flex: 1; }
+
+    /* ── Content Centering Wrapper ── */
+    .content-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 48px;
+    }
+    @media (max-width: 900px) { .content-wrap { padding: 0 24px; } }
+    @media (max-width: 560px) { .content-wrap { padding: 0 16px; } }
+
+    /* ── Topbar inner wrap ── */
+    .topbar-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 48px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    @media (max-width: 900px) { .topbar-inner { padding: 0 24px; } }
+    @media (max-width: 768px) {
+      .topbar { min-height: 76px; padding: 10px 0; }
+      .topbar-inner { padding: 0 20px; gap: 10px; }
+      .topbar-avatar { width: 42px; height: 42px; }
+      .topbar-greeting { font-size: 14px; line-height: 1.25; }
+      .topbar-quote { font-size: 11px; line-height: 1.35; margin-top: 2px; }
+      .topbar-actions { gap: 6px; }
+      .icon-btn { width: 36px; height: 36px; }
+      .burger-btn { width: 36px; height: 36px; }
+    }
+    @media (max-width: 560px) { .topbar-inner { padding: 0 16px; } }
+    @media (max-width: 480px) {
+      .topbar-inner { padding: 0 14px; gap: 8px; }
+      .topbar-avatar { width: 38px; height: 38px; }
+      .topbar-greeting { font-size: 13px; }
+      .topbar-quote { font-size: 10px; line-height: 1.3; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       SECTION LABELS
+    ═══════════════════════════════════════════════════════════ */
+    .section-title {
+      font-size: 16px; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-primary);
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 4px;
+    }
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px; height: 20px;
+      background: linear-gradient(to bottom, var(--accent-blue), var(--accent-purple));
+      border-radius: 4px;
+    }
+    .section-subtitle { font-size: 13px; color: var(--accent-blue); margin-bottom: 20px; padding-left: 14px; }
+
+    /* ═══════════════════════════════════════════════════════════
+       SUMMARY STAT CARDS
+    ═══════════════════════════════════════════════════════════ */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 36px;
+    }
+    @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px)  { .stat-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+      cursor: default;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-card); }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 18px 18px 0 0;
+    }
+    .stat-card--balance::after  { background: linear-gradient(90deg, var(--accent-blue), #0077a8); }
+    .stat-card--income::after   { background: linear-gradient(90deg, var(--accent-green), #00b37a); }
+    .stat-card--expense::after  { background: linear-gradient(90deg, var(--accent-red), #cc0033); }
+
+    .stat-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px;
+    }
+    .stat-amount { font-size: 24px; font-weight: 800; line-height: 1.15; margin-bottom: 12px; }
+    .stat-card--balance .stat-amount  { color: var(--text-primary); }
+    .stat-card--income .stat-amount   { color: var(--accent-green); }
+    .stat-card--expense .stat-amount  { color: var(--accent-red); }
+
+    .stat-footer { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
+    .stat-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+    }
+    .stat-badge.up   { background: rgba(0,229,160,0.12); color: var(--accent-green); }
+    .stat-badge.down { background: rgba(255,77,109,0.12); color: var(--accent-red); }
+    .stat-badge.flat { background: rgba(255,255,255,0.06); color: var(--mono-300); }
+
+    .stat-deco {
+      position: absolute; bottom: -35px; right: -35px;
+      width: 150px; height: 150px; border-radius: 50%;
+      pointer-events: none;
+      filter: blur(24px);
+      opacity: 0.45;
+      transition: var(--transition);
+    }
+    .stat-card--balance .stat-deco  { background: radial-gradient(circle, var(--accent-blue) 10%, rgba(0,180,216,0.35) 60%, transparent 100%); }
+    .stat-card--income .stat-deco   { background: radial-gradient(circle, var(--accent-green) 10%, rgba(0,229,160,0.35) 60%, transparent 100%); }
+    .stat-card--expense .stat-deco  { background: radial-gradient(circle, var(--accent-red) 10%, rgba(255,77,109,0.35) 60%, transparent 100%); }
+    .stat-card:hover .stat-deco     { opacity: 0.65; transform: scale(1.15); }
+
+    /* ═══════════════════════════════════════════════════════════
+       ACCOUNT DISTRIBUTION CARDS
+    ═══════════════════════════════════════════════════════════ */
+    .account-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 36px;
+    }
+    @media (max-width: 1200px) { .account-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 860px)  { .account-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px)  { .account-grid { grid-template-columns: 1fr; } }
+
+    .acc-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+    .acc-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-card);
+      border-color: rgba(255,255,255,0.18);
+    }
+
+    .acc-bg-blob {
+      position: absolute; bottom: -20px; right: -20px;
+      width: 110px; height: 110px; border-radius: 50%;
+      opacity: 0.15; pointer-events: none; transition: var(--transition);
+    }
+    .acc-card:hover .acc-bg-blob { opacity: 0.28; transform: scale(1.1); }
+
+    .acc-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .acc-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0;
+    }
+    .acc-status {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      padding: 4px 10px; border-radius: 20px;
+    }
+    .acc-status.active {
+      background: rgba(0,200,133,0.12);
+      color: var(--accent-green);
+      border: 1px solid rgba(0,200,133,0.3);
+    }
+    .acc-name   { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+    .acc-balance { font-size: 20px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+
+    /* Per-account vibrant colors — Brand accurate */
+    .acc-card--cash     .acc-icon { background: linear-gradient(135deg,#C8102E,#8B0000); }
+    .acc-card--cash     .acc-bg-blob { background: #C8102E; }
+    .acc-card--seabank  .acc-icon { background: linear-gradient(135deg,#F47920,#C05500); }
+    .acc-card--seabank  .acc-bg-blob { background: #F47920; }
+    .acc-card--bankdki  .acc-icon { background: linear-gradient(135deg,#E63329,#A01020); }
+    .acc-card--bankdki  .acc-bg-blob { background: #E63329; }
+    .acc-card--gopay    .acc-icon { background: linear-gradient(135deg,#00AED6,#0076A3); }
+    .acc-card--gopay    .acc-bg-blob { background: #00AED6; }
+    .acc-card--ovo      .acc-icon { background: linear-gradient(135deg,#9d4edd,#5a1e8c); }
+    .acc-card--ovo      .acc-bg-blob { background: #9d4edd; }
+    .acc-card--shopee   .acc-icon { background: linear-gradient(135deg,#ff5a1e,#b42800); }
+    .acc-card--shopee   .acc-bg-blob { background: #ff5a1e; }
+    .acc-card--dana     .acc-icon { background: linear-gradient(135deg,#1189FA,#005FCC); }
+    .acc-card--dana     .acc-bg-blob { background: #1189FA; }
+
+    /* ═══════════════════════════════════════════════════════════
+       SAVINGS GOALS & EXPENSE BUDGET
+    ═══════════════════════════════════════════════════════════ */
+    .goals-budget-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 36px;
+    }
+    @media (max-width: 860px) { .goals-budget-grid { grid-template-columns: 1fr; } }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 24px;
+      transition: var(--transition);
+    }
+    .panel-card:hover { box-shadow: var(--shadow-card); }
+
+    .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .panel-title  { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-primary); }
+    .panel-summary { font-size: 12px; color: var(--text-muted); }
+
+    .panel-progress-main { margin-bottom: 20px; }
+    .progress-bar-wrap {
+      background: rgba(243, 238, 234, 0.07);
+      border-radius: 999px; height: 8px; overflow: hidden; margin-top: 8px;
+    }
+    .progress-bar-fill { height: 100%; border-radius: 999px; transition: width 1s ease; }
+
+    .fill-green  { background: linear-gradient(90deg, var(--accent-green), #00b37a); }
+    .fill-brown  { background: linear-gradient(90deg, #bf8652, #7d4b24); }
+    .fill-blue   { background: linear-gradient(90deg, var(--accent-blue), #0077a8); }
+    .fill-purple { background: linear-gradient(90deg, var(--accent-purple), #5a1e8c); }
+    .fill-orange { background: linear-gradient(90deg, var(--accent-orange), #c87800); }
+    .fill-red    { background: linear-gradient(90deg, var(--accent-red), #cc0033); }
+
+    /* Red palette for Expense Budget Category Breakdown */
+    .fill-red-1 { background: linear-gradient(90deg, #ff4d6d, #c9184a); }
+    .fill-red-2 { background: linear-gradient(90deg, #e63946, #a4161a); }
+    .fill-red-3 { background: linear-gradient(90deg, #ff758f, #d90429); }
+    .fill-red-4 { background: linear-gradient(90deg, #d62828, #800020); }
+    .fill-red-5 { background: linear-gradient(90deg, #f25c54, #b7094c); }
+
+    .cat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
+
+    .cat-item { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .cat-name  { flex: 0 0 110px; font-size: 13px; color: var(--text-secondary); }
+    .cat-bar-wrap { flex: 1; background: rgba(243,238,234,0.07); border-radius: 999px; height: 6px; overflow: hidden; }
+    .cat-bar-fill  { height: 100%; border-radius: 999px; transition: width 1s ease; }
+    .cat-pct { font-size: 12px; color: var(--text-muted); flex: 0 0 auto; min-width: 80px; text-align: right; }
+
+    /* ═══════════════════════════════════════════════════════════
+       CASHFLOW TREND CHART
+    ═══════════════════════════════════════════════════════════ */
+    .chart-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 36px;
+    }
+    .chart-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .chart-legend { display: flex; gap: 20px; }
+    .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-muted); }
+    .legend-dot  { width: 10px; height: 10px; border-radius: 50%; }
+    .chart-wrap  { position: relative; height: 260px; }
+
+    /* ═══════════════════════════════════════════════════════════
+       MASCOT CARD (Overview)
+    ═══════════════════════════════════════════════════════════ */
+    .mascot-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      display: flex;
+      align-items: stretch;
+      min-height: 400px;
+      margin-top: 36px;
+      margin-bottom: 36px;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+    .mascot-img-side {
+      flex: 0 0 500px;
+      position: relative;
+      overflow: visible;
+      background: transparent;
+    }
+    .mascot-img-bg {
+      position: absolute;
+      inset: 0;
+      background: #111114;
+      clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%);
+      z-index: 1;
+    }
+    .mascot-divider {
+      position: absolute;
+      inset: 0;
+      background: var(--accent-blue);
+      clip-path: polygon(calc(100% - 3.5px) 0, 100% 0, 84% 100%, calc(84% - 3.5px) 100%);
+      z-index: 3;
+      filter: drop-shadow(0 0 8px rgba(0, 180, 216, 0.75));
+    }
+    .mascot-img-side img {
+      position: absolute;
+      height: 200%;
+      width: auto;
+      max-width: none;
+      top: 28px;
+      left: -150px;
+      object-fit: contain;
+      object-position: top left;
+      filter: drop-shadow(0 14px 28px rgba(0,0,0,0.65));
+      z-index: 5;
+      pointer-events: none;
+    }
+    .mascot-img-side .deco-text {
+      position: absolute;
+      top: 32px; left: 28px;
+      font-size: 115px; font-weight: 900;
+      color: rgba(255,255,255,0.045);
+      line-height: 1.0; pointer-events: none; user-select: none;
+      z-index: 2;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .mascot-info {
+      flex: 1;
+      padding: 44px 48px 44px 44px;
+      display: flex; flex-direction: column; justify-content: center;
+      position: relative; z-index: 4;
+      background: transparent;
+    }
+    .mascot-label { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-blue); margin-bottom: 8px; }
+    .mascot-name  { font-size: 54px; font-weight: 900; line-height: 1.05; color: var(--text-primary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.02em; }
+    .mascot-role  { font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-blue); margin-bottom: 18px; }
+    .mascot-quote { font-size: 13px; color: var(--text-secondary); font-style: italic; border-left: 2px solid var(--accent-blue); padding-left: 16px; line-height: 1.6; max-width: 480px; }
+    @media (max-width: 768px) {
+      .mascot-card { flex-direction: column; overflow: hidden; margin-top: 0; min-height: auto; }
+      .mascot-img-side { flex: 0 0 260px; width: 100%; overflow: hidden; }
+      .mascot-img-bg { clip-path: none; }
+      .mascot-img-side img { position: relative; height: 100%; width: 100%; top: 0; left: 0; object-position: top center; }
+      .mascot-divider { display: none; }
+      .mascot-info { padding: 28px 24px; }
+      .mascot-name { font-size: 38px; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       ANIMATIONS & UTILITIES
+    ═══════════════════════════════════════════════════════════ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.5s ease forwards; }
+    .fade-up--d1 { animation-delay: 0.05s; }
+    .fade-up--d2 { animation-delay: 0.10s; }
+    .fade-up--d3 { animation-delay: 0.15s; }
+    .fade-up--d4 { animation-delay: 0.20s; }
+    .fade-up--d5 { animation-delay: 0.25s; }
+    .fade-up--d6 { animation-delay: 0.30s; }
+    .fade-up--d7 { animation-delay: 0.35s; }
+
+    .rupiah { font-variant-numeric: tabular-nums; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--mono-600); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--mono-400); }
+
+    /* ═══════════════════════════════════════════════════════════
+       DRAWER FOOTER
+    ═══════════════════════════════════════════════════════════ */
+    .drawer-footer {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .drawer-footer strong { display: block; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+    .drawer-footer span { font-style: italic; }
+
+    /* ═══════════════════════════════════════════════════════════
+       INPUT DATA PAGE – TRANSACTION TABLE
+    ═══════════════════════════════════════════════════════════ */
+    .input-page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .input-page-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+    .input-page-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      letter-spacing: 0.04em;
+    }
+    .btn-new-entry {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--accent-blue), #0077b6);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: var(--font-base);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: var(--transition);
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(0,180,216,0.35);
+    }
+    .btn-new-entry:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0,180,216,0.5);
+    }
+
+    /* Table wrapper */
+    .tx-table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tx-table {
+      width: 100%;
+      min-width: 640px;
+      border-collapse: collapse;
+    }
+    .tx-table thead tr {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .tx-table thead th {
+      padding: 14px 20px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: left;
+    }
+    .tx-table thead th:nth-child(4) { text-align: right; }
+    .tx-table thead th:nth-child(5) { text-align: center; }
+
+    .tx-table tbody tr {
+      border-bottom: 1px solid var(--border-color);
+      transition: background 0.18s;
+    }
+    .tx-table tbody tr:last-child { border-bottom: none; }
+    .tx-table tbody tr:hover { background: var(--bg-card-hover); }
+
+    .tx-table td {
+      padding: 16px 20px;
+      vertical-align: middle;
+    }
+    .tx-table tbody td:nth-child(4) { text-align: right; }
+
+    /* Col 1 – Detail */
+    .tx-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .tx-date {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      font-family: monospace;
+      letter-spacing: 0.04em;
+    }
+
+    /* Col 2 – Type & Category */
+    .tx-badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      border-left: 3px solid currentColor;
+    }
+    .tx-badge--food     { color: var(--accent-orange); background: rgba(255,159,28,0.1); }
+    .tx-badge--bonus    { color: var(--accent-green);  background: rgba(0,229,160,0.1);  }
+    .tx-badge--retirement { color: var(--accent-blue); background: rgba(0,180,216,0.1);  }
+    .tx-badge--entertainment { color: var(--accent-red); background: rgba(255,77,109,0.1); }
+    .tx-badge--freelance { color: var(--accent-green); background: rgba(0,229,160,0.1);  }
+    .tx-badge--education { color: var(--accent-blue);  background: rgba(0,180,216,0.1);  }
+    .tx-badge--investment { color: #00e5a0;             background: rgba(0,229,160,0.08); }
+    .tx-badge--vacation  { color: var(--accent-purple); background: rgba(157,78,221,0.1); }
+    .tx-badge--utilities { color: var(--accent-red);   background: rgba(255,77,109,0.1); }
+    .tx-badge--salary    { color: var(--accent-green);  background: rgba(0,229,160,0.1);  }
+    .tx-badge--transport { color: var(--accent-orange); background: rgba(255,159,28,0.1); }
+    .tx-badge--health    { color: var(--accent-blue);   background: rgba(0,180,216,0.1);  }
+    .tx-type {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* Col 3 – Account */
+    .tx-account {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.04em;
+    }
+
+    /* Col 4 – Amount */
+    .tx-amount {
+      font-size: 15px;
+      font-weight: 800;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.01em;
+    }
+    .tx-amount.positive { color: var(--accent-green); }
+    .tx-amount.negative { color: var(--accent-red);   }
+    .tx-amount.neutral  { color: var(--accent-blue);  }
+
+    /* Col 5 – Actions */
+    .tx-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+    .tx-action-btn {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition);
+    }
+    .tx-action-btn svg { width: 15px; height: 15px; }
+    .tx-action-btn--edit  { color: var(--accent-blue); }
+    .tx-action-btn--edit:hover  { background: rgba(0,180,216,0.15); border-color: var(--accent-blue); }
+    .tx-action-btn--delete { color: var(--accent-red); }
+    .tx-action-btn--delete:hover { background: rgba(255,77,109,0.15); border-color: var(--accent-red); }
+
+    /* Pagination */
+    .tx-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-color);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .tx-page-info { font-weight: 500; }
+    .tx-page-btn {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition);
+    }
+    .tx-page-btn:hover:not(:disabled) { background: var(--bg-card-hover); border-color: var(--accent-blue); color: var(--accent-blue); }
+    .tx-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .tx-page-btn svg { width: 14px; height: 14px; }
+
+    /* Insight AI placeholder */
+    .insight-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 50vh;
+      gap: 16px;
+      text-align: center;
+      padding: 48px;
+    }
+    .insight-placeholder .ip-icon {
+      width: 72px; height: 72px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, var(--accent-purple), #5a1e8c);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+      box-shadow: 0 8px 32px rgba(157,78,221,0.3);
+    }
+    .insight-placeholder .ip-icon svg { width: 36px; height: 36px; stroke: #fff; }
+    .insight-placeholder h2 {
+      font-size: 22px; font-weight: 800; color: var(--text-primary);
+    }
+    .insight-placeholder p {
+      font-size: 14px; color: var(--text-muted); max-width: 360px; line-height: 1.7;
+    }
+    .insight-placeholder .coming-soon {
+      padding: 8px 20px;
+      border-radius: 20px;
+      border: 1px solid var(--accent-purple);
+      color: var(--accent-purple);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LOADING OVERLAY & SYNC SPINNER
+    ═══════════════════════════════════════════════════════════ */
+    .loading-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 9990;
+      background: rgba(10, 10, 12, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .loading-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .sync-spinner {
+      width: 58px;
+      height: 58px;
+    }
+    .spinner-svg {
+      width: 100%;
+      height: 100%;
+      animation: spinSync 1s linear infinite;
+      filter: drop-shadow(0 0 10px rgba(0, 200, 133, 0.45));
+    }
+    @keyframes spinSync {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .sync-text {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-family: var(--font-base);
+    }
+    .icon-btn.refreshing {
+      border-color: var(--accent-green) !important;
+      color: var(--accent-green) !important;
+      box-shadow: 0 0 12px rgba(0, 200, 133, 0.45);
+    }
+    .icon-btn.refreshing svg {
+      animation: spinIcon 0.8s linear infinite;
+    }
+    @keyframes spinIcon {
+      100% { transform: rotate(360deg); }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       INSIGHT AI PAGE
+    ══════════════════════════════════════════════════════════ */
+
+    /* Hero Mascot Card (Insight AI) */
+    .ai-hero-card {
+      display: flex;
+      border-radius: 20px;
+      overflow: visible;
+      margin-top: 48px;
+      margin-bottom: 28px;
+      min-height: 350px;
+      border: 1px solid var(--border-color);
+      background: #111114;
+      position: relative;
+    }
+    .ai-hero-left {
+      position: relative;
+      width: 44%;
+      flex-shrink: 0;
+      overflow: visible;
+    }
+    .ai-hero-left-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, #0077b6 100%);
+      clip-path: polygon(0 0, 88% 0, 100% 100%, 0 100%);
+      border-top-left-radius: 20px;
+      border-bottom-left-radius: 20px;
+      z-index: 1;
+    }
+    .ai-hero-char-label {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+      z-index: 3;
+    }
+    .ai-hero-char-id {
+      display: none;
+    }
+    .ai-hero-mascot-img {
+      position: absolute;
+      height: 145%;
+      width: auto;
+      top: -46px;
+      left: -10px;
+      object-fit: contain;
+      object-position: bottom left;
+      z-index: 5;
+      filter: drop-shadow(0 16px 32px rgba(0,0,0,0.7));
+      pointer-events: none;
+    }
+    .ai-hero-right {
+      flex: 1;
+      background: #111114;
+      padding: 40px 48px 40px 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      border-top-right-radius: 20px;
+      border-bottom-right-radius: 20px;
+    }
+    /* Carbon-fiber diagonal lines texture */
+    .ai-hero-right::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(
+          -45deg,
+          transparent,
+          transparent 3px,
+          rgba(255,255,255,0.025) 3px,
+          rgba(255,255,255,0.025) 4px
+        );
+      pointer-events: none;
+    }
+    .ai-hero-tag {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent-blue);
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .ai-hero-name {
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #fff;
+      line-height: 1.0;
+      margin-bottom: 6px;
+      position: relative;
+    }
+    .ai-hero-role {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-blue);
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .ai-hero-quote {
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      font-style: italic;
+      line-height: 1.6;
+      max-width: 360px;
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .ai-hero-skills {
+      display: flex;
+      gap: 10px;
+      position: relative;
+    }
+    .ai-skill-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.6);
+      font-size: 15px;
+    }
+    .ai-skill-icon.active {
+      background: var(--accent-orange);
+      border-color: var(--accent-orange);
+      color: #000;
+    }
+    .ai-hero-active {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      color: var(--accent-green);
+      text-transform: uppercase;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+    .ai-hero-num {
+      position: absolute;
+      bottom: 18px;
+      right: 18px;
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 0.1em;
+    }
+
+    /* Dossier Card */
+    .ai-dossier-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .ai-dossier-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 22px 28px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .ai-dossier-title {
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+    .ai-dossier-sub {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .ai-status-badge {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 6px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .ai-status-badge.active {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+    .ai-timestamp {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    /* Idle State */
+    .ai-idle-body {
+      padding: 64px 28px;
+      text-align: center;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    .ai-idle-title {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    .ai-idle-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 420px;
+      line-height: 1.7;
+    }
+
+    /* Results State */
+    .ai-results-body {
+      padding: 28px;
+    }
+    .ai-section-block {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+    }
+    .ai-section-accent {
+      width: 5px;
+      flex-shrink: 0;
+    }
+    .ai-section-accent--blue   { background: #00b4d8; }
+    .ai-section-accent--green  { background: var(--accent-green); }
+    .ai-section-accent--orange { background: var(--accent-orange); }
+    .ai-section-accent--purple { background: var(--accent-purple); }
+    .ai-section-content {
+      flex: 1;
+      padding: 20px 22px;
+    }
+    .ai-section-num {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .ai-section-title {
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+    .ai-section-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    .ai-section-text .line-item {
+      display: block;
+      margin-bottom: 4px;
+    }
+    .ai-section-text .line-item::before {
+      content: '– ';
+    }
+    .ai-section-text .highlight-green  { color: var(--accent-green); font-weight: 700; }
+    .ai-section-text .highlight-orange { color: var(--accent-orange); font-weight: 700; }
+    .ai-section-text .highlight-red    { color: #ff4d6d; font-weight: 700; }
+    .ai-section-text .highlight-blue   { color: #00b4d8; font-weight: 700; }
+    .ai-status-line {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .ai-health-badge {
+      display: inline-block;
+      padding: 2px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .ai-health-badge.aman    { background: rgba(0,200,133,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .ai-health-badge.waspada { background: rgba(255,159,28,0.15); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+    .ai-health-badge.kritis  { background: rgba(255,77,109,0.15); color: #ff4d6d; border: 1px solid #ff4d6d; }
+    .ai-ratio-row {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 10px;
+      line-height: 1.8;
+    }
+    .ai-ratio-row span { color: var(--text-secondary); }
+
+    /* Analyze Button */
+    .ai-analyze-btn {
+      display: block;
+      width: calc(100% - 56px);
+      margin: 0 28px 28px;
+      padding: 16px;
+      background: linear-gradient(90deg, var(--accent-blue) 0%, #0077b6 100%);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: var(--font-base);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(0, 180, 216, 0.35);
+    }
+    .ai-analyze-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,0.0), rgba(255,255,255,0.12), rgba(255,255,255,0.0));
+      animation: btnShimmer 2.4s linear infinite;
+    }
+    @keyframes btnShimmer {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .ai-analyze-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .ai-analyze-btn:active { transform: translateY(0); }
+    .ai-analyze-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .ai-analyzing-indicator {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .ai-analyzing-indicator.visible { display: flex; }
+    .ai-analyzing-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #00e5a0;
+      animation: dotPulse 1.2s ease-in-out infinite;
+    }
+    .ai-analyzing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .ai-analyzing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dotPulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50%       { opacity: 1;   transform: scale(1.2); }
+    }
+
+    @media (max-width: 640px) {
+      .ai-hero-card { flex-direction: column; }
+      .ai-hero-left { width: 100%; min-height: 200px; }
+      .ai-hero-name { font-size: 28px; }
+    }
+  </style>
 </head>
-<body>
-    <!--==================== HEADER ====================-->
-    <header class="header" id="header">
-        <nav class="nav container">
-            <span class="nav__logo">Farhan</span>
-            <div class="nav__menu" id="nav-menu">
-                <ul class="nav__list">
-                    <li class="nav__item"><a href="#home" class="nav__link">Home</a></li>
-                    <li class="nav__item"><a href="#info" class="nav__link">Info</a></li>
-                    <li class="nav__item"><a href="#work" class="nav__link">Works</a></li>
-                    <li class="nav__item"><a href="#videos" class="nav__link">Videos</a></li>
-                    <li class="nav__item"><a href="#services" class="nav__link">Services</a></li>
-                    <li class="nav__item"><a href="#contact" class="nav__link">Contact</a></li>
-                </ul>
-                <div class="nav__close" id="nav-close">
-                    <i class="ri-close-line"></i>
-                </div>
-            </div>
-            <div class="nav__toggle" id="nav-toggle">
-                <i class="ri-menu-line"></i>
-            </div>
-        </nav>
-    </header>
-    
-    <!--==================== MAIN ====================-->
-    <main class="main">
-        <!--==================== HOME ====================-->
-        <section class="home section" id="home">
-            <div class="home__container container grid">
-                <div class="home__data">
-                    <h1 class="home__name">Muhammad Farhan Aghniawan</h1>
-                    <h3 class="home__profession"><span class="typing">Accountant</span></h3>
-                </div>
-                <div class="home__photo">
-                    <div class="photo-wrapper">
-                        <img src="default-photo.png" alt="Muhammad Farhan Aghniawan">
-                    </div>
-                </div>
-                <div class="home__scroll">
-                    <a href="#work" class="home__scroll-link">
-                        <span class="home__scroll-text">Recent Works</span>
-                        <i class="ri-arrow-down-line animate-scroll"></i>
-                    </a>
-                </div>
-            </div>
-        </section>
+<body data-theme="dark">
 
-        <!--==================== INFO ====================-->
-        <section class="info section" id="info">
-            <h2 class="section__title">MY INFO</h2>
-            <div class="info__container container grid">
-                <div class="info__photo">
-                    <div class="photo-wrapper">
-                        <img src="default-photo.png" alt="About Me">
-                    </div>
-                </div>
-                <div class="info__data">
-                    <h3 class="info__title">About Me</h3>
-                    <p class="about__description">
-                        Hello, I am a fresh graduate with a Bachelor’s degree in Accounting from Gunadarma University, with a strong passion for finance and business, particularly in accounting and financial management. Throughout my studies, I gained comprehensive knowledge in various aspects of accounting, including financial accounting, management accounting, cost accounting, taxation, and auditing. I am also familiar with accounting software such as Zahir, Accurate, and DacEasy Accounting.                    </p>
-                    <p class="about__description" style="margin-bottom: 2rem;">
-                        In addition, I have developed skills in graphic design from scratch. I explored areas such as PowerPoint design, logo design, photo and video editing, and typography. I even learned website development to create user-friendly interfaces, including this personal portfolio website that I built myself. I also learned data analytic and visualization using software such as Excel and PowerBI. Moreover, I am proficient in using design software such as Premiere Pro, Photoshop, Canva, and CapCut.                    </p>
-                    <a href="https://drive.google.com/file/d/1qCF7bpMCN_NlTlACFNzaG43IDlfEYnH-/view?usp=sharing" class="button button--flex about__button" target="_blank">
-                        Download CV
-                    </a>
-                </div>
-                <div class="info__skills">
-                    <h3 class="info__title">Skills</h3>
-                    <div class="skills__container">
-                        <div class="skills__data">
-                            <div class="skills__card">
-                                <img src="assets/icons/html-icon.png" alt="HTML" class="skills__icon">
-                                <span class="skills__name">HTML</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/css-icon.png" alt="CSS" class="skills__icon">
-                                <span class="skills__name">CSS</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/js-icon.png" alt="JavaScript" class="skills__icon">
-                                <span class="skills__name">JavaScript</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/word-icon.png" alt="Word" class="skills__icon">
-                                <span class="skills__name">Word</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/ppt-icon.png" alt="PowerPoint" class="skills__icon">
-                                <span class="skills__name">PowerPoint</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/excel-icon.png" alt="Excel" class="skills__icon">
-                                <span class="skills__name">Excel</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/powerbi-icon.png" alt="PowerBI" class="skills__icon">
-                                <span class="skills__name">PowerBI</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/zahir-icon.png" alt="Zahir" class="skills__icon">
-                                <span class="skills__name">Zahir</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/accurate-icon.png" alt="Accurate" class="skills__icon">
-                                <span class="skills__name">Accurate</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/acl-icon.png" alt="ACL" class="skills__icon">
-                                <span class="skills__name">ACL</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/canva-icon.png" alt="Canva" class="skills__icon">
-                                <span class="skills__name">Canva</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/figma-icon.png" alt="Figma" class="skills__icon">
-                                <span class="skills__name">Figma</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/capcut-icon.png" alt="Capcut" class="skills__icon">
-                                <span class="skills__name">Capcut</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/photoshop-icon.png" alt="Photoshop" class="skills__icon">
-                                <span class="skills__name">Photoshop</span>
-                            </div>
-                            <div class="skills__card">
-                                <img src="assets/icons/premiere-icon.png" alt="Premiere Pro" class="skills__icon">
-                                <span class="skills__name">Premiere Pro</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+  <!-- ════════════ LOADING & SYNCHRONIZING OVERLAY ════════════ -->
+  <div class="loading-overlay" id="loading-overlay" aria-hidden="true">
+    <div class="sync-spinner">
+      <svg viewBox="0 0 50 50" class="spinner-svg">
+        <!-- Top-Right Arc (Green) -->
+        <path d="M 25 5 A 20 20 0 0 1 45 25" fill="none" stroke="var(--accent-green)" stroke-width="3.5" stroke-linecap="round"/>
+        <!-- Bottom-Left Arc (Blue) -->
+        <path d="M 25 45 A 20 20 0 0 1 5 25" fill="none" stroke="#00b4d8" stroke-width="3.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="sync-text">SYNCHRONIZING LEDGER...</div>
+  </div>
 
-        <!--==================== WORKS ====================-->
-        <section class="work section" id="work">
-            <h2 class="section__title">RECENT WORKS</h2>
-            <div class="work__container container grid">
-                <div class="work__card">
-                    <a href="https://drive.google.com/file/d/1fcSJdkHMT-KEuMSqychDzgoZPoh5BDDi/view?usp=sharing" target="_blank" class="work__link">
-                        <div class="work__content">
-                            <h3 class="work__title">Professional PowerPoint</h3>
-                            <p class="work__description">Product promotion project during the 5th semester lecture in Gunadarma University.</p>
-                            <img src="ppt1.png" alt="Professional PowerPoint" class="work__img">
-                        </div>
-                    </a>
-                </div>
-                <div class="work__card">
-                    <a href="https://drive.google.com/file/d/1eDJ0kdPY2vgH9g4qww8U6fAxaSZ3LZPd/view?usp=sharing" target="_blank" class="work__link">
-                        <div class="work__content">
-                            <h3 class="work__title">Image Sliders PowerPoint</h3>
-                            <p class="work__description">Creative image sliders in PowerPoint using Morph Transition.</p>
-                            <img src="ppt2.png" alt="Image Sliders PowerPoint" class="work__img">
-                        </div>
-                    </a>
-                </div>
-                <div class="work__card">
-                    <a href="https://drive.google.com/file/d/1aZqWO6o2h3KQKCgv2vuJ7rT_ru-myLs2/view?usp=sharing" target="_blank" class="work__link">
-                        <div class="work__content">
-                            <h3 class="work__title">Lego Price Dashboard</h3>
-                            <p class="work__description">Interactive LEGO Sales Dashboard design using Power BI.</p>
-                            <img src="powerbi.png" alt="Lego Price Dashboard" class="work__img">
-                        </div>
-                    </a>
-                </div>
-                <div class="work__card">
-                    <a href="https://script.google.com/macros/s/AKfycbwmJnMzLMD_4iHjNaRLFb760yj67UnhCvpLINl7ijyq7r75lotiVrWwUsnL8g4y1NJN_A/exec" target="_blank" class="work__link">
-                        <div class="work__content">
-                            <h3 class="work__title">Personal Financial Dashboard</h3>
-                            <p class="work__description">Web application project using Google Apps Script and Google Spreadsheet.</p>
-                            <img src="website1.png" alt="Personal Financial Dashboard" class="work__img">
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </section>
+<div class="app-shell">
 
-        <!--==================== VIDEOS ====================-->
-        <section class="videos section" id="videos">
-            <h2 class="section__title">RECENT VIDEOS</h2>
-            <div class="videos__container container grid">
-                <a href="https://youtu.be/vcF0uD1Nw6k?si=y2pGd6DpIbQC5awh" target="_blank" class="videos__card">
-                    <img src="placeholder7.jpg" alt="SWAT MAGANG, PENYERBUAN KACAU, SALAH GRANAT | Ready Or Not Indonesia" class="videos__img">
-                    <div class="videos__data">
-                        <h3 class="videos__title">SWAT MAGANG, PENYERBUAN KACAU, SALAH GRANAT | Ready Or Not Indonesia</h3>
-                        <span class="videos__date">30 May 2026</span>
-                    </div>
-                </a>
-                <a href="https://youtu.be/G2sIOY0rBQg?si=xHjXZ3ltdfvNNyn6" target="_blank" class="videos__card">
-                    <img src="placeholder6.jpg" alt="HANTU JAWA, HULK, DUO PENGECUT | Fear Therapy Indonesia" class="videos__img">
-                    <div class="videos__data">
-                        <h3 class="videos__title">HANTU JAWA, HULK, DUO PENGECUT | Fear Therapy Indonesia</h3>
-                        <span class="videos__date">27 November 2024</span>
-                    </div>
-                </a>
-                <a href="https://youtu.be/4tKbTgZ4ASQ?si=-_bU4ZROy7YJcZZj" target="_blank" class="videos__card">
-                    <img src="placeholder5.jpg" alt="SUICIDE SQUAD, PEMBURU TANK, SOLO PUSH | Battlefield 2042 Indonesia" class="videos__img">
-                    <div class="videos__data">
-                        <h3 class="videos__title">SUICIDE SQUAD, PEMBURU TANK, SOLO PUSH | Battlefield 2042 Indonesia</h3>
-                        <span class="videos__date">10 August 2024</span>
-                    </div>
-                </a>
-                <a href="https://youtu.be/MUkUKRcoWG0?si=J3KfCy43a8diNImV" target="_blank" class="videos__card">
-                    <img src="placeholder4.jpg" alt="KEBODOHAN BAJAK LAUT, BAKAR TEMAN, MEGALODON | Sea Of Thieves Indonesia" class="videos__img">
-                    <div class="videos__data">
-                        <h3 class="videos__title">KEBODOHAN BAJAK LAUT, BAKAR TEMAN, MEGALODON | Sea Of Thieves Indonesia</h3>
-                        <span class="videos__date">5 August 2023</span>
-                    </div>
-                </a>
-                <a href="https://youtu.be/slew5rm9vtw?si=3aQePKu2mrI_n725" target="_blank" class="videos__card">
-                    <img src="placeholder3.jpg" alt="GEROBAK TERBANG, RUMAH HANCUR, API UNGGUN | The Forest Indonesia" class="videos__img">
-                    <div class="videos__data">
-                        <h3 class="videos__title">GEROBAK TERBANG, RUMAH HANCUR, API UNGGUN | The Forest Indonesia</h3>
-                        <span class="videos__date">27 July 2023</span>
-                    </div>
-                </a>
-                <a href="https://youtu.be/ljtocnsHZtE?si=dFcN7NRhbODh5-Lf" target="_blank" class="videos__card">
-                    <img src="placeholder2.jpg" alt="KANDANG KERA, TEMAN HARAM, FRIENDLY FIRE LAGI | CSGO Indonesia" class="videos__img">
-                    <div class="videos__data">
-                        <h3 class="videos__title">KANDANG KERA, TEMAN HARAM, FRIENDLY FIRE LAGI | CSGO Indonesia</h3>
-                        <span class="videos__date">1 January 2023</span>
-                    </div>
-                </a>
-            </div>
-        </section>
+  <!-- ════════════ HAMBURGER DRAWER NAV ════════════ -->
+  <div class="nav-overlay" id="nav-overlay" onclick="closeNav()"></div>
 
-        <!--==================== SERVICES ====================-->
-        <section class="services section" id="services">
-            <h2 class="section__title">SERVICES</h2>
-            <div class="services__container container grid">
-                <article class="services__card">
-                    <i class="ri-code-line services__icon"></i>
-                    <h3 class="services__title">Web Development</h3>
-                    <p class="services__description">Crafting responsive and user-friendly websites tailored to your needs.</p>
-                </article>
-                <article class="services__card">
-                    <i class="ri-palette-line services__icon"></i>
-                    <h3 class="services__title">Graphic Design</h3>
-                    <p class="services__description">Creative graphic design services including PowerPoint, photo/video editing, logos, and website interfaces.</p>
-                </article>
-                <article class="services__card">
-                    <i class="ri-calculator-line services__icon"></i>
-                    <h3 class="services__title">Accounting Services</h3>
-                    <p class="services__description">Efficient accounting services to manage your finances with precision.</p>
-                </article>
-                <article class="services__card">
-                    <i class="ri-file-chart-line services__icon"></i>
-                    <h3 class="services__title">Financial Reports</h3>
-                    <p class="services__description">Comprehensive reports summarizing data and insights for decision-making.</p>
-                </article>
-            </div>
-        </section>
+  <nav class="nav-drawer" id="nav-drawer" aria-label="Navigasi Utama">
+    <div class="drawer-header">
+      <div class="drawer-logo">
+        <img src="https://lh3.googleusercontent.com/d/158H63COQ3XGjuZcUvyoUqMEBJcwPjrXE"
+             alt="Muhammad Farhan Aghniawan"
+             onerror="this.src='https://drive.google.com/uc?export=view&id=158H63COQ3XGjuZcUvyoUqMEBJcwPjrXE'" />
+      </div>
+      <div class="drawer-brand">Muhammad Farhan Aghniawan</div>
+    </div>
+    <div class="drawer-nav">
 
-        <!--==================== CONTACT ====================-->
-        <section class="contact section" id="contact">
-            <h2 class="section__title">CONTACT</h2>
-            <div class="contact__container container">
-                <form action="" class="contact__form" id="contact-form">
-                    <div class="contact__form-group">
-                        <div class="contact__form-div">
-                            <input type="text" class="contact__form-input" placeholder="Your Name" id="names" name="names">
-                        </div>
-                        <div class="contact__form-div">
-                            <input type="email" class="contact__form-input" placeholder="Your Email" id="email" name="email">
-                        </div>
-                        <div class="contact__form-div contact__form-area">
-                            <textarea name="message" id="message" cols="30" rows="10" class="contact__form-input" placeholder="Your Message"></textarea>
-                        </div>
-                        <button type="submit" class="button button--flex contact__button">
-                            Send Message
-                        </button>
-                    </div>
-                </form>
-                <div class="contact__social">
-                    <div class="contact__social-wrapper">
-                        <a href="https://www.facebook.com/farhan.aghniawan" target="_blank" class="contact__social-link"><i class="ri-facebook-line"></i></a>
-                        <a href="https://www.instagram.com/farhanaghni" target="_blank" class="contact__social-link"><i class="ri-instagram-line"></i></a>
-                        <a href="https://www.linkedin.com/in/muhammad-farhan-aghniawan-375110185/" target="_blank" class="contact__social-link"><i class="ri-linkedin-line"></i></a>
-                        <a href="https://x.com/farhanaghni" target="_blank" class="contact__social-link"><i class="ri-twitter-line"></i></a>
-                        <a href="https://www.youtube.com/@chontolatos" target="_blank" class="contact__social-link"><i class="ri-youtube-line"></i></a>
-                        <a href="https://www.tiktok.com/@chontolatoseksdi" target="_blank" class="contact__social-link"><i class="ri-tiktok-line"></i></a>
-                        <a href="https://github.com/Aghniawan" target="_blank" class="contact__social-link"><i class="ri-github-line"></i></a>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
+      <button class="drawer-item active" id="nav-overview" onclick="showPage('overview')" aria-label="Overview" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        Overview
+      </button>
 
-    <!--==================== FOOTER ====================-->
-    <footer class="footer">
-        <div class="footer__container container grid">
-            <div class="footer__content">
-                <span class="footer__logo">Farhan</span>
-                <p class="footer__description">© 2025 All Rights Reserved By Muhammad Farhan Aghniawan</p>
-            </div>
+      <button class="drawer-item" id="nav-input" onclick="showPage('input')" aria-label="Tambah / Input Data">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Tambah / Input Data
+      </button>
+
+      <button class="drawer-item" id="nav-insight" onclick="showPage('insight')" aria-label="Insight AI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Insight AI
+      </button>
+
+    </div>
+
+    <div class="drawer-footer">
+      <strong>Muhammad Farhan Aghniawan</strong>
+      <span>© 2025 &nbsp;·&nbsp; Dibuat Dengan Cinta</span>
+    </div>
+  </nav>
+
+  <!-- ════════════ MAIN CONTENT ════════════ -->
+  <div class="main-content">
+
+    <!-- TOP BAR -->
+    <header class="topbar" id="topbar">
+      <div class="topbar-inner">
+        <!-- Hamburger burger button -->
+        <button class="burger-btn" id="btn-burger" onclick="toggleNav()" aria-label="Buka Menu" title="Menu">
+          <div class="burger-line"></div>
+          <div class="burger-line"></div>
+          <div class="burger-line"></div>
+        </button>
+        <div class="topbar-avatar" aria-label="Avatar Farhan">
+          <img src="https://lh3.googleusercontent.com/d/158H63COQ3XGjuZcUvyoUqMEBJcwPjrXE"
+               alt="Muhammad Farhan Aghniawan"
+               onerror="this.src='https://drive.google.com/uc?export=view&id=158H63COQ3XGjuZcUvyoUqMEBJcwPjrXE'" />
         </div>
-    </footer>
+        <div class="topbar-info">
+          <div class="topbar-greeting">
+            Welcome, <span class="topbar-name">Muhammad Farhan Aghniawan</span>
+          </div>
+          <div class="topbar-quote">
+            "Wealth is not about having a lot of money. It's about having a lot of options."
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <!-- Theme toggle -->
+          <button class="icon-btn" id="btn-theme" onclick="toggleTheme()" aria-label="Toggle Dark/Light Mode" title="Toggle Mode">
+            <svg id="icon-theme-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg id="icon-theme-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+            </svg>
+          </button>
+          <!-- Refresh -->
+          <button class="icon-btn" id="btn-refresh" onclick="refreshData()" aria-label="Refresh Data" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
 
-    <!--========== SCROLL UP ==========-->
-    <a href="#" class="scrollup" id="scroll-up">
-        <i class="ri-arrow-up-line"></i>
-    </a>
+    <!-- ════════════════════ PAGE: OVERVIEW ════════════════════ -->
+    <div id="page-overview" class="page-container">
+      <div class="content-wrap">
 
-    <!--=============== TYPING JS ===============-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.1.0/typed.umd.js" integrity="sha512-+2pW8xXU/rNr7VS+H62aqapfRpqFwnSQh9ap6THjsm41AxgA0MhFRtfrABS+Lx2KHJn82UOrnBKhjZOXpom2LQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+      <!-- ── 1. Summary Stat Cards ── -->
+      <section aria-labelledby="sec-summary" style="margin-bottom:36px">
+        <h1 id="sec-summary" class="sr-only">Ringkasan Keuangan</h1>
+        <div class="stat-grid" id="stat-grid">
 
-    <!--=============== SCROLLREVEAL ===============-->
-    <script src="https://unpkg.com/scrollreveal@4.0.9/dist/scrollreveal.min.js"></script>
+          <div class="stat-card stat-card--balance fade-up fade-up--d1" id="card-balance">
+            <div class="stat-label">Net Balance</div>
+            <div class="stat-amount rupiah" id="val-balance">Rp 0</div>
+            <div class="stat-footer">
+              <span class="stat-badge flat" id="badge-balance">~ Stabil</span>
+              <span>vs bulan lalu</span>
+            </div>
+            <div class="stat-deco"></div>
+          </div>
 
-    <!--=============== EMAIL JS ===============-->
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+          <div class="stat-card stat-card--income fade-up fade-up--d2" id="card-income">
+            <div class="stat-label">Total Income</div>
+            <div class="stat-amount rupiah" id="val-income">Rp 0</div>
+            <div class="stat-footer">
+              <span class="stat-badge flat" id="badge-income">~ Stabil</span>
+              <span>vs bulan lalu</span>
+            </div>
+            <div class="stat-deco"></div>
+          </div>
 
-    <!--=============== MAIN JS ===============-->
-    <script src="script.js"></script>
+          <div class="stat-card stat-card--expense fade-up fade-up--d3" id="card-expense">
+            <div class="stat-label">Total Expense</div>
+            <div class="stat-amount rupiah" id="val-expense">Rp 0</div>
+            <div class="stat-footer">
+              <span class="stat-badge flat" id="badge-expense">~ Stabil</span>
+              <span>vs bulan lalu</span>
+            </div>
+            <div class="stat-deco"></div>
+          </div>
+
+
+
+        </div>
+      </section>
+
+      <!-- ── 2. Account Distribution ── -->
+      <section aria-labelledby="sec-accounts" style="margin-bottom:36px">
+        <h2 class="section-title" id="sec-accounts">Account Distribution</h2>
+        <p class="section-subtitle">Current liquid capital overview.</p>
+
+        <div class="account-grid" id="account-grid">
+
+          <!-- CASH -->
+          <div class="acc-card acc-card--cash fade-up fade-up--d1" id="acc-cash">
+            <div class="acc-header">
+              <div class="acc-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="6" width="20" height="12" rx="2"/>
+                  <circle cx="12" cy="12" r="2"/>
+                  <path d="M6 12h.01M18 12h.01"/>
+                </svg>
+              </div>
+              <span class="acc-status active">ACTIVE</span>
+            </div>
+            <div class="acc-name">Cash</div>
+            <div class="acc-balance rupiah" id="bal-cash">Rp 0</div>
+            <div class="acc-bg-blob"></div>
+          </div>
+
+          <!-- SEABANK -->
+          <div class="acc-card acc-card--seabank fade-up fade-up--d2" id="acc-seabank">
+            <div class="acc-header">
+              <div class="acc-icon">
+                <!-- Bank / building icon -->
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="3" y1="21" x2="21" y2="21"/>
+                  <polyline points="3 10 12 3 21 10"/>
+                  <line x1="12" y1="3" x2="12" y2="10"/>
+                  <rect x="6" y="10" width="3" height="11"/>
+                  <rect x="15" y="10" width="3" height="11"/>
+                  <rect x="10.5" y="10" width="3" height="11"/>
+                </svg>
+              </div>
+              <span class="acc-status active">ACTIVE</span>
+            </div>
+            <div class="acc-name">SeaBank</div>
+            <div class="acc-balance rupiah" id="bal-seabank">Rp 0</div>
+            <div class="acc-bg-blob"></div>
+          </div>
+
+          <!-- BANK DKI -->
+          <div class="acc-card acc-card--bankdki fade-up fade-up--d3" id="acc-bankdki">
+            <div class="acc-header">
+              <div class="acc-icon">
+                <!-- Bank / building icon -->
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="3" y1="21" x2="21" y2="21"/>
+                  <polyline points="3 10 12 3 21 10"/>
+                  <line x1="12" y1="3" x2="12" y2="10"/>
+                  <rect x="6" y="10" width="3" height="11"/>
+                  <rect x="15" y="10" width="3" height="11"/>
+                  <rect x="10.5" y="10" width="3" height="11"/>
+                </svg>
+              </div>
+              <span class="acc-status active">ACTIVE</span>
+            </div>
+            <div class="acc-name">Bank DKI</div>
+            <div class="acc-balance rupiah" id="bal-bankdki">Rp 0</div>
+            <div class="acc-bg-blob"></div>
+          </div>
+
+          <!-- GOPAY -->
+          <div class="acc-card acc-card--gopay fade-up fade-up--d4" id="acc-gopay">
+            <div class="acc-header">
+              <div class="acc-icon">
+                <!-- E-Wallet / digital wallet icon -->
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 12V8H6a2 2 0 01-2-2c0-1.1.9-2 2-2h12v4"/>
+                  <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/>
+                  <path d="M18 12a2 2 0 00-2 2 2 2 0 002 2h4v-4h-4z"/>
+                </svg>
+              </div>
+              <span class="acc-status active">ACTIVE</span>
+            </div>
+            <div class="acc-name">Gopay</div>
+            <div class="acc-balance rupiah" id="bal-gopay">Rp 0</div>
+            <div class="acc-bg-blob"></div>
+          </div>
+
+          <!-- OVO -->
+          <div class="acc-card acc-card--ovo fade-up fade-up--d5" id="acc-ovo">
+            <div class="acc-header">
+              <div class="acc-icon">
+                <!-- E-Wallet / digital wallet icon -->
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 12V8H6a2 2 0 01-2-2c0-1.1.9-2 2-2h12v4"/>
+                  <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/>
+                  <path d="M18 12a2 2 0 00-2 2 2 2 0 002 2h4v-4h-4z"/>
+                </svg>
+              </div>
+              <span class="acc-status active">ACTIVE</span>
+            </div>
+            <div class="acc-name">OVO</div>
+            <div class="acc-balance rupiah" id="bal-ovo">Rp 0</div>
+            <div class="acc-bg-blob"></div>
+          </div>
+
+          <!-- SHOPEE PAY -->
+          <div class="acc-card acc-card--shopee fade-up fade-up--d6" id="acc-shopee">
+            <div class="acc-header">
+              <div class="acc-icon">
+                <!-- E-Wallet / digital wallet icon -->
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 12V8H6a2 2 0 01-2-2c0-1.1.9-2 2-2h12v4"/>
+                  <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/>
+                  <path d="M18 12a2 2 0 00-2 2 2 2 0 002 2h4v-4h-4z"/>
+                </svg>
+              </div>
+              <span class="acc-status active">ACTIVE</span>
+            </div>
+            <div class="acc-name">ShopeePay</div>
+            <div class="acc-balance rupiah" id="bal-shopee">Rp 0</div>
+            <div class="acc-bg-blob"></div>
+          </div>
+
+          <!-- DANA -->
+          <div class="acc-card acc-card--dana fade-up fade-up--d7" id="acc-dana">
+            <div class="acc-header">
+              <div class="acc-icon">
+                <!-- E-Wallet / digital wallet icon -->
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 12V8H6a2 2 0 01-2-2c0-1.1.9-2 2-2h12v4"/>
+                  <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/>
+                  <path d="M18 12a2 2 0 00-2 2 2 2 0 002 2h4v-4h-4z"/>
+                </svg>
+              </div>
+              <span class="acc-status active">ACTIVE</span>
+            </div>
+            <div class="acc-name">DANA</div>
+            <div class="acc-balance rupiah" id="bal-dana">Rp 0</div>
+            <div class="acc-bg-blob"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── 3. Expense Budget ── -->
+      <div style="margin-bottom:36px">
+
+        <!-- Expense Budget (full width) -->
+        <div class="panel-card fade-up fade-up--d1" id="panel-budget">
+          <div class="panel-header">
+            <span class="panel-title">Expense Budget</span>
+            <span class="panel-summary" id="budget-summary">0% (Rp 0 spent, Rp 0 left)</span>
+          </div>
+          <div class="panel-progress-main">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill fill-brown" id="budget-main-bar" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="cat-label">Category Breakdown</div>
+          <div id="budget-categories" style="display:grid;grid-template-columns:repeat(2,1fr);gap:0 32px">
+            <div class="cat-item">
+              <span class="cat-name">Utilitas</span>
+              <div class="cat-bar-wrap"><div class="cat-bar-fill fill-red-1" style="width:0%"></div></div>
+              <span class="cat-pct">0% (Rp 0)</span>
+            </div>
+            <div class="cat-item">
+              <span class="cat-name">Belanja</span>
+              <div class="cat-bar-wrap"><div class="cat-bar-fill fill-red-2" style="width:0%"></div></div>
+              <span class="cat-pct">0% (Rp 0)</span>
+            </div>
+            <div class="cat-item">
+              <span class="cat-name">Hiburan</span>
+              <div class="cat-bar-wrap"><div class="cat-bar-fill fill-red-3" style="width:0%"></div></div>
+              <span class="cat-pct">0% (Rp 0)</span>
+            </div>
+            <div class="cat-item">
+              <span class="cat-name">Transport</span>
+              <div class="cat-bar-wrap"><div class="cat-bar-fill fill-red-4" style="width:0%"></div></div>
+              <span class="cat-pct">0% (Rp 0)</span>
+            </div>
+            <div class="cat-item">
+              <span class="cat-name">Makanan</span>
+              <div class="cat-bar-wrap"><div class="cat-bar-fill fill-red-5" style="width:0%"></div></div>
+              <span class="cat-pct">0% (Rp 0)</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── 4. Cashflow Trend Chart ── -->
+      <section aria-labelledby="sec-cashflow" class="chart-panel fade-up" id="cashflow-panel">
+        <div class="chart-panel-header">
+          <h2 class="section-title" id="sec-cashflow" style="margin-bottom:0">Cashflow Trend</h2>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--accent-green)"></div>
+              <span>Income Trend</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--accent-red)"></div>
+              <span>Expense Trend</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="cashflow-chart" aria-label="Grafik Cashflow Trend"></canvas>
+        </div>
+      </section>
+
+      <!-- ── 5. Mascot Card ── -->
+      <!--
+        ╔═══════════════════════════════════════════════╗
+        ║  INSTRUKSI GAMBAR MASKOT                      ║
+        ║                                               ║
+        ║  Nama file : maskot.png                       ║
+        ║  Cara      : Upload file ke Google Drive,     ║
+        ║              lalu ganti src img di bawah      ║
+        ║              dengan direct-link gambar Anda.  ║
+        ║                                               ║
+        ║  Contoh src: "https://drive.google.com/..."   ║
+        ╚═══════════════════════════════════════════════╝
+      -->
+      <div class="mascot-card fade-up" id="mascot-card">
+        <div class="mascot-img-side">
+          <div class="mascot-img-bg"></div>
+          <img src="https://lh3.googleusercontent.com/d/1isNQ1vZeoemy5AlBSDQAd5gKBjNlQD9T" alt="Maskot Financial Dashboard"
+               onerror="this.src='https://drive.google.com/uc?export=view&id=1isNQ1vZeoemy5AlBSDQAd5gKBjNlQD9T'" />
+          <div class="deco-text">Agent</div>
+          <div class="mascot-divider"></div>
+        </div>
+        <div class="mascot-info">
+          <div class="mascot-label">CV: BUDGET SPECIALIST MODULE</div>
+          <div class="mascot-name">LUCIA</div>
+          <div class="mascot-role">Budget Specialist</div>
+          <div class="mascot-quote">
+            "Fokus pada pengendalian beban, efisiensi, dan kesehatan cash flow bulanan."
+          </div>
+        </div>
+      </div><!-- /.mascot-card -->
+
+      </div><!-- /.content-wrap -->
+    </div><!-- /#page-overview -->
+
+    <!-- ════════════════════ PAGE: INPUT DATA ════════════════════ -->
+    <div id="page-input" class="page-container" style="display:none">
+      <div class="content-wrap">
+
+        <div class="input-page-header">
+          <div>
+            <div class="input-page-title">Transaction DB</div>
+            <div class="input-page-subtitle">Direct link to secure ledger terminal.</div>
+          </div>
+          <button class="btn-new-entry" id="btn-new-entry" onclick="openNewEntry()">+ New Entry</button>
+        </div>
+
+        <div class="tx-table-wrap">
+          <table class="tx-table" id="tx-table" aria-label="Tabel Transaksi">
+            <thead>
+              <tr>
+                <th>Detail Transaksi</th>
+                <th>Type &amp; Category</th>
+                <th>Account</th>
+                <th>Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tx-tbody">
+              <!-- Rows rendered by JS -->
+            </tbody>
+          </table>
+
+          <!-- Pagination -->
+          <div class="tx-pagination">
+            <span class="tx-page-info" id="tx-page-info">Page 1 of 1</span>
+            <button class="tx-page-btn" id="tx-prev" onclick="txChangePage(-1)" disabled aria-label="Halaman Sebelumnya">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="tx-page-btn" id="tx-next" onclick="txChangePage(1)" aria-label="Halaman Berikutnya">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /#page-input -->
+
+    <!-- ════════════════════ PAGE: INSIGHT AI ════════════════════ -->
+    <div id="page-insight" class="page-container" style="display:none">
+      <div class="content-wrap">
+
+        <!-- ── HERO MASCOT CARD ── -->
+        <div class="ai-hero-card fade-up fade-up--d1">
+
+          <div class="ai-hero-left">
+            <div class="ai-hero-left-bg"></div>
+            <div class="ai-hero-char-label">Budget Specialist</div>
+            <img class="ai-hero-mascot-img"
+                 src="https://lh3.googleusercontent.com/d/1isNQ1vZeoemy5AlBSDQAd5gKBjNlQD9T"
+                 alt="Lucia Mascot"
+                 onerror="this.src='https://drive.google.com/uc?export=view&id=1isNQ1vZeoemy5AlBSDQAd5gKBjNlQD9T'" />
+          </div>
+
+          <div class="ai-hero-right">
+            <div class="ai-hero-tag">FINANCIAL ADVISOR MODULE</div>
+            <div class="ai-hero-name">LUCIA</div>
+            <div class="ai-hero-role">Budget Specialist</div>
+            <div class="ai-hero-quote">&ldquo;Fokus pada pengendalian beban, efisiensi, dan kesehatan cash flow bulanan.&rdquo;</div>
+            <div class="ai-hero-active">ACTIVE</div>
+          </div>
+
+        </div><!-- /.ai-hero-card -->
+
+        <!-- ── ADVISORY INTELLIGENCE DOSSIER ── -->
+        <div class="ai-dossier-card fade-up fade-up--d2">
+
+          <div class="ai-dossier-header">
+            <div>
+              <div class="ai-dossier-title">Advisory Intelligence Dossier</div>
+              <div class="ai-dossier-sub">Tactical Wealth Alleviation Analysis</div>
+            </div>
+            <span class="ai-status-badge" id="ai-status-badge">AWAITING TRIGGER</span>
+          </div>
+
+          <!-- IDLE STATE -->
+          <div class="ai-idle-body" id="ai-idle-body">
+            <div class="ai-idle-title">INITIALIZATION STANDBY</div>
+            <div class="ai-idle-desc">Sistem siap. Tekan tombol &ldquo;ANALYZE PROTOCOL&rdquo; di bawah untuk memicu evaluasi terperinci, peringatan anggaran, dan perencanaan taktis berbasis data ledger Anda.</div>
+          </div>
+
+          <!-- ANALYZING STATE -->
+          <div class="ai-analyzing-indicator" id="ai-analyzing">
+            <div class="ai-analyzing-dot"></div>
+            <div class="ai-analyzing-dot"></div>
+            <div class="ai-analyzing-dot"></div>
+            <span>Analyzing ledger data&hellip;</span>
+          </div>
+
+          <!-- RESULTS STATE (hidden until analyzed) -->
+          <div class="ai-results-body" id="ai-results-body" style="display:none">
+            <!-- rendered by renderInsightResults() -->
+          </div>
+
+          <!-- BUTTON -->
+          <button class="ai-analyze-btn" id="ai-analyze-btn" onclick="runInsightAnalysis()">
+            ANALYZE PROTOCOL &#9889;
+          </button>
+
+        </div><!-- /.ai-dossier-card -->
+
+      </div><!-- /.content-wrap -->
+    </div><!-- /#page-insight -->
+
+  </div><!-- /.main-content -->
+</div><!-- /.app-shell -->
+
+<!-- ════════════ CLIENT SCRIPT ════════════ -->
+<script>
+// ──────────────────────────────────────────────
+//  HELPERS
+// ──────────────────────────────────────────────
+function formatRupiah(num) {
+  if (num === null || num === undefined || isNaN(num)) return 'Rp 0';
+  return 'Rp ' + Math.abs(parseFloat(num)).toLocaleString('id-ID');
+}
+
+// Versi yang menampilkan tanda minus jika nilai negatif
+function formatRupiahSigned(num) {
+  if (num === null || num === undefined || isNaN(num)) return 'Rp 0';
+  var n = parseFloat(num);
+  if (n < 0) return '– Rp ' + Math.abs(n).toLocaleString('id-ID');
+  return 'Rp ' + n.toLocaleString('id-ID');
+}
+
+function pct(current, target) {
+  if (!target || target === 0) return 0;
+  return Math.min(100, Math.round((current / target) * 100));
+}
+
+function changeBadge(el, change) {
+  var abs = Math.abs(change).toFixed(1);
+  if (change > 0) { el.className = 'stat-badge up';   el.textContent = '▲ ' + abs + '%'; }
+  else if (change < 0) { el.className = 'stat-badge down'; el.textContent = '▼ ' + abs + '%'; }
+  else                 { el.className = 'stat-badge flat'; el.textContent = '~ Stabil'; }
+}
+
+// ──────────────────────────────────────────────
+//  THEME
+// ──────────────────────────────────────────────
+function toggleTheme() {
+  var isDark = document.body.getAttribute('data-theme') === 'dark';
+  document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('icon-theme-dark').style.display  = isDark ? 'none' : '';
+  document.getElementById('icon-theme-light').style.display = isDark ? '' : 'none';
+
+  if (cashflowChart && cashflowChart.config && cashflowChart.config.data) {
+    var chartData = {
+      labels: cashflowChart.data.labels,
+      incomes: cashflowChart.data.datasets[0].data,
+      expenses: cashflowChart.data.datasets[1].data
+    };
+    renderCashflowChart(chartData);
+  }
+}
+
+// ──────────────────────────────────────────────
+//  HAMBURGER NAV
+// ──────────────────────────────────────────────
+function toggleNav() {
+  var drawer  = document.getElementById('nav-drawer');
+  var overlay = document.getElementById('nav-overlay');
+  var isOpen  = drawer.classList.contains('open');
+  if (isOpen) {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+  }
+}
+
+function closeNav() {
+  document.getElementById('nav-drawer').classList.remove('open');
+  document.getElementById('nav-overlay').classList.remove('open');
+}
+
+// ──────────────────────────────────────────────
+//  NAVIGATION
+// ──────────────────────────────────────────────
+function showPage(page) {
+  ['overview','input','insight'].forEach(function(p) {
+    var pageEl = document.getElementById('page-' + p);
+    var navEl  = document.getElementById('nav-' + p);
+    if (pageEl) pageEl.style.display = p === page ? '' : 'none';
+    if (navEl)  navEl.classList.toggle('active', p === page);
+  });
+  if (page === 'input') renderTxTable();
+  closeNav();
+}
+
+// ──────────────────────────────────────────────
+//  ACCOUNTS
+// ──────────────────────────────────────────────
+var ACCOUNT_MAP = {
+  'cash'      : 'bal-cash',
+  'seabank'   : 'bal-seabank',
+  'bank dki'  : 'bal-bankdki',
+  'bankdki'   : 'bal-bankdki',
+  'gopay'     : 'bal-gopay',
+  'ovo'       : 'bal-ovo',
+  'shopee'    : 'bal-shopee',
+  'shopeepay' : 'bal-shopee',
+  'dana'      : 'bal-dana'
+};
+
+function loadAccounts(accounts) {
+  if (!accounts) return;
+  accounts.forEach(function(acc) {
+    var key = String(acc.name || '').toLowerCase().trim();
+    var id  = ACCOUNT_MAP[key];
+    if (id) { var el = document.getElementById(id); if (el) el.textContent = formatRupiahSigned(acc.balance); }
+  });
+}
+
+// ──────────────────────────────────────────────
+//  SAVINGS GOALS
+// ──────────────────────────────────────────────
+var CAT_COLORS = ['fill-green','fill-blue','fill-brown','fill-purple','fill-orange'];
+
+function renderSavingsCategories(categories) {
+  var wrap = document.getElementById('savings-categories');
+  if (!wrap || !categories) return;
+  wrap.innerHTML = '';
+  categories.forEach(function(cat, i) {
+    var p = pct(cat.current, cat.target);
+    wrap.innerHTML += '<div class="cat-item">'
+      + '<span class="cat-name">' + cat.name + '</span>'
+      + '<div class="cat-bar-wrap"><div class="cat-bar-fill ' + CAT_COLORS[i % CAT_COLORS.length] + '" style="width:' + p + '%"></div></div>'
+      + '<span class="cat-pct">' + p + '% (' + formatRupiah(cat.current) + ')</span>'
+      + '</div>';
+  });
+}
+
+// ──────────────────────────────────────────────
+//  EXPENSE BUDGET
+// ──────────────────────────────────────────────
+var BDG_COLORS = ['fill-red-1','fill-red-2','fill-red-3','fill-red-4','fill-red-5'];
+
+function renderBudgetCategories(categories, totalSpent) {
+  var wrap = document.getElementById('budget-categories');
+  if (!wrap || !categories) return;
+  wrap.innerHTML = '';
+  categories.forEach(function(cat, i) {
+    // Persentase: pengeluaran kategori ini vs TOTAL PENGELUARAN bulan ini
+    var catPct = totalSpent > 0 ? Math.round((cat.spent / totalSpent) * 1000) / 10 : 0;
+    var barWidth = Math.min(catPct, 100);
+    wrap.innerHTML += '<div class="cat-item">'
+      + '<span class="cat-name">' + cat.name + '</span>'
+      + '<div class="cat-bar-wrap"><div class="cat-bar-fill ' + BDG_COLORS[i % BDG_COLORS.length] + '" style="width:' + barWidth + '%"></div></div>'
+      + '<span class="cat-pct">' + catPct + '% (' + formatRupiah(cat.spent) + ')</span>'
+      + '</div>';
+  });
+}
+
+// ──────────────────────────────────────────────
+//  CASHFLOW CHART
+// ──────────────────────────────────────────────
+var cashflowChart = null;
+
+function renderCashflowChart(data) {
+  if (!data || !data.labels) return;
+  var ctx = document.getElementById('cashflow-chart');
+  if (!ctx) return;
+  var isDark     = document.body.getAttribute('data-theme') !== 'light';
+  var gridColor  = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
+  var tickColor  = isDark ? '#606060' : '#808080';
+
+  var greenLineColor = isDark ? '#00c885' : '#00875a';
+  var greenBgColor   = isDark ? 'rgba(0, 200, 133, 0.12)' : 'rgba(0, 135, 90, 0.18)';
+  var redLineColor   = isDark ? '#ff4d6d' : '#dc2626';
+  var redBgColor     = isDark ? 'rgba(255, 77, 109, 0.12)' : 'rgba(220, 38, 38, 0.18)';
+
+  // Force all values to be non-negative so both lines always rise from 0
+  var incomes  = (data.incomes  || []).map(function(v) { return Math.max(0, Math.abs(parseFloat(v) || 0)); });
+  var expenses = (data.expenses || []).map(function(v) { return Math.max(0, Math.abs(parseFloat(v) || 0)); });
+
+  if (cashflowChart) cashflowChart.destroy();
+  cashflowChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          label: 'Income Trend',
+          data: incomes,
+          borderColor: greenLineColor,
+          backgroundColor: greenBgColor,
+          pointBackgroundColor: greenLineColor,
+          pointRadius: 5, pointHoverRadius: 7,
+          tension: 0.4, fill: true, borderWidth: 2.5
+        },
+        {
+          label: 'Expense Trend',
+          data: expenses,
+          borderColor: redLineColor,
+          backgroundColor: redBgColor,
+          pointBackgroundColor: redLineColor,
+          pointRadius: 5, pointHoverRadius: 7,
+          tension: 0.4, fill: true, borderWidth: 2.5
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1C1C1C',
+          borderColor: 'rgba(255,255,255,0.12)', borderWidth: 1,
+          titleColor: '#F0F0F0', bodyColor: '#909090', padding: 12,
+          callbacks: { label: function(c) { return ' ' + c.dataset.label + ': ' + formatRupiah(Math.abs(c.parsed.y)); } }
+        }
+      },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { family: 'Outfit', size: 12 } } },
+        y: {
+          min: 0,
+          grid: { color: gridColor },
+          ticks: {
+            color: tickColor, font: { family: 'Outfit', size: 12 },
+            callback: function(v) {
+              if (v >= 1e9) return (v/1e9).toFixed(0)+'M';
+              if (v >= 1e6) return (v/1e6).toFixed(0)+'Jt';
+              if (v >= 1e3) return (v/1e3).toFixed(0)+'Rb';
+              return v;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ──────────────────────────────────────────────
+//  DATA LOADING (GAS backend)
+// ──────────────────────────────────────────────
+function showLoading() {
+  var overlay = document.getElementById('loading-overlay');
+  var btn = document.getElementById('btn-refresh');
+  if (overlay) overlay.classList.add('active');
+  if (btn) btn.classList.add('refreshing');
+}
+
+function hideLoading() {
+  var overlay = document.getElementById('loading-overlay');
+  var btn = document.getElementById('btn-refresh');
+  if (overlay) overlay.classList.remove('active');
+  if (btn) btn.classList.remove('refreshing');
+}
+
+function loadOverviewData(onComplete) {
+  if (typeof google === 'undefined' || !google.script) {
+    console.info('[DEV] GAS tidak tersedia – gunakan data demo.');
+    _loadDemo();
+    if (onComplete) onComplete();
+    return;
+  }
+
+  var pending = 4;
+  var isFinished = false;
+
+  function done() {
+    pending--;
+    if (pending <= 0 && !isFinished) {
+      isFinished = true;
+      if (onComplete) onComplete();
+    }
+  }
+
+  // Timeout pengaman 3.5s agar loading TIDAK PERNAH stuck selamanya
+  setTimeout(function() {
+    if (!isFinished) {
+      isFinished = true;
+      console.warn('loadOverviewData: Response timeout, hiding loader.');
+      if (onComplete) onComplete();
+    }
+  }, 3500);
+
+  // 1. Summary
+  google.script.run
+    .withSuccessHandler(function(d) {
+      try {
+        if (d) {
+          var vBal = document.getElementById('val-balance'); if (vBal) vBal.textContent = formatRupiahSigned(d.netBalance);
+          var vInc = document.getElementById('val-income');  if (vInc) vInc.textContent = formatRupiah(d.totalIncome);
+          var vExp = document.getElementById('val-expense'); if (vExp) vExp.textContent = formatRupiah(d.totalExpense);
+
+          var bBal = document.getElementById('badge-balance'); if (bBal) changeBadge(bBal, d.balanceChange);
+          var bInc = document.getElementById('badge-income');  if (bInc) changeBadge(bInc, d.incomeChange);
+          var bExp = document.getElementById('badge-expense'); if (bExp) changeBadge(bExp, d.expenseChange);
+        }
+      } catch (err) { console.error('Summary render:', err); }
+      done();
+    })
+    .withFailureHandler(function(e) { console.error('Summary:', e); done(); })
+    .getSummaryData();
+
+  // 2. Accounts
+  google.script.run
+    .withSuccessHandler(function(data) {
+      try { loadAccounts(data); } catch (err) { console.error('Accounts render:', err); }
+      done();
+    })
+    .withFailureHandler(function(e) { console.error('Accounts:', e); done(); })
+    .getAccountsData();
+
+  // 3. Expense Budget
+  google.script.run
+    .withSuccessHandler(function(d) {
+      try {
+        if (d) {
+          var totalSpent  = d.totalSpent  || 0;
+          var totalBudget = d.totalBudget || 0;
+          var left = totalBudget - totalSpent;
+          // Persentase dikap 100% untuk bar dan teks agar tampilan wajar
+          var rawPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 1000) / 10 : 0;
+          var displayPct = Math.min(rawPct, 100);
+          var bar  = document.getElementById('budget-main-bar'); if (bar) bar.style.width = displayPct + '%';
+          var sum  = document.getElementById('budget-summary');
+          if (sum) {
+            if (left >= 0) {
+              // Masih ada sisa budget
+              sum.textContent = displayPct + '% (' + formatRupiah(totalSpent) + ' spent, ' + formatRupiah(left) + ' left)';
+            } else {
+              // Over budget — tampilkan selisih lebih
+              sum.textContent = displayPct + '% (' + formatRupiah(totalSpent) + ' spent, over budget by ' + formatRupiah(Math.abs(left)) + ')';
+              sum.style.color = 'var(--accent-red)';
+            }
+          }
+          renderBudgetCategories(d.categories, totalSpent);
+        }
+      } catch (err) { console.error('Budget render:', err); }
+      done();
+    })
+    .withFailureHandler(function(e) { console.error('Budget:', e); done(); })
+    .getExpenseBudget();
+
+  // 4. Cashflow Trend
+  google.script.run
+    .withSuccessHandler(function(d) {
+      try { renderCashflowChart(d); } catch (err) { console.error('Cashflow render:', err); }
+      done();
+    })
+    .withFailureHandler(function(e) { console.error('Cashflow:', e); done(); })
+    .getCashflowFromLedger();
+}
+
+function refreshData() {
+  showLoading();
+  var start = Date.now();
+
+  var inputPage = document.getElementById('page-input');
+  if (inputPage && inputPage.style.display !== 'none') {
+    TX_IS_LOADING = false;
+    renderTxTable();
+  }
+
+  loadOverviewData(function() {
+    var elapsed = Date.now() - start;
+    var minDelay = Math.max(0, 800 - elapsed);
+    setTimeout(function() {
+      hideLoading();
+    }, minDelay);
+  });
+}
+
+// ──────────────────────────────────────────────
+//  TRANSACTION TABLE (Input Data page) — GAS-backed
+// ──────────────────────────────────────────────
+var TX_PAGE        = 1;
+var TX_PER_PAGE    = 20;
+var TX_TOTAL_PAGES = 1;
+var TX_IS_LOADING  = false;
+
+function txTypeSign(type) {
+  if (type === 'INCOME')   return '+';
+  if (type === 'EXPENSE')  return '-';
+  if (type === 'TRANSFER') return '⇄';
+  return '~';
+}
+function txBadgeClass(badge) { return 'tx-badge tx-badge--' + badge; }
+function txAmountClass(sign) {
+  if (sign === '+') return 'tx-amount positive';
+  if (sign === '-') return 'tx-amount negative';
+  if (sign === '⇄') return 'tx-amount neutral';
+  return 'tx-amount neutral';
+}
+function txAmountLabel(sign, amount) {
+  var prefix = sign === '+' ? '+ ' : sign === '-' ? '– ' : sign === '⇄' ? '⇄ ' : '';
+  return prefix + 'Rp ' + Number(amount).toLocaleString('id-ID');
+}
+
+function renderTxTable() {
+  if (TX_IS_LOADING) return;
+  TX_IS_LOADING = true;
+
+  var tbody = document.getElementById('tx-tbody');
+  if (!tbody) { TX_IS_LOADING = false; return; }
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">Memuat data…</td></tr>';
+
+  if (typeof google === 'undefined' || !google.script) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">Tidak terhubung ke GAS. Buka melalui Google Apps Script.</td></tr>';
+    document.getElementById('tx-page-info').textContent = 'Page 1 of 1';
+    document.getElementById('tx-prev').disabled = true;
+    document.getElementById('tx-next').disabled = true;
+    TX_IS_LOADING = false;
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      TX_IS_LOADING    = false;
+      TX_TOTAL_PAGES   = result.totalPages || 1;
+      TX_PAGE          = result.currentPage || 1;
+      var rows         = result.rows || [];
+
+      if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px;">Belum ada data transaksi. Tambahkan entri baru.</td></tr>';
+      } else {
+        tbody.innerHTML = rows.map(function(tx) {
+          var sign = txTypeSign(tx.type);
+          var safeRow     = String(tx.rowIndex);
+          var safeName    = tx.name.replace(/'/g, "\\'");
+          var safeDate    = String(tx.date || '');
+          var safeBadge   = String(tx.badge || '').replace(/'/g, "\\'");
+          var safeType    = String(tx.type || 'EXPENSE');
+          var safeAccount = String(tx.account || '').replace(/'/g, "\\'");
+          var safeAmount  = Number(tx.amount) || 0;
+
+          // Tampilan akun: Transfer menampilkan "Sumber → Tujuan" dalam dua baris
+          var accountDisplay;
+          if (tx.type === 'TRANSFER') {
+            var parts = tx.account.split(' → ');
+            if (parts.length === 2) {
+              accountDisplay = '<span class="tx-account">' + parts[0].trim() + '</span>'
+                + '<div style="font-size:10px;color:var(--text-muted);margin-top:3px;">→ ' + parts[1].trim() + '</div>';
+            } else {
+              accountDisplay = '<span class="tx-account">' + tx.account + '</span>';
+            }
+          } else {
+            accountDisplay = '<span class="tx-account">' + tx.account + '</span>';
+          }
+          return '<tr>'
+            + '<td><div class="tx-name">' + tx.name + '</div><div class="tx-date">' + tx.date + '</div></td>'
+            + '<td><span class="' + txBadgeClass(tx.badge) + '">' + tx.badge.toUpperCase() + '</span><div class="tx-type">' + tx.type + '</div></td>'
+            + '<td>' + accountDisplay + '</td>'
+            + '<td><span class="' + txAmountClass(sign) + '">' + txAmountLabel(sign, tx.amount) + '</span></td>'
+            + '<td><div class="tx-actions">'
+              + '<button class="tx-action-btn tx-action-btn--edit" title="Edit" aria-label="Edit transaksi"'
+              + ' onclick="txEditRow(' + safeRow + ',\'' + safeName + '\',\'' + safeDate + '\',\'' + safeBadge + '\',\'' + safeType + '\',\'' + safeAccount + '\',' + safeAmount + ')">'
+                + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+              + '</button>'
+              + '<button class="tx-action-btn tx-action-btn--delete" title="Hapus" onclick="txDeleteRow(' + safeRow + ',\'' + safeName + '\')" aria-label="Hapus transaksi">'
+                + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5 0V4a1 1 0 011-1h2a1 1 0 011 1v2"/></svg>'
+              + '</button>'
+            + '</div></td>'
+            + '</tr>';
+        }).join('');
+      }
+
+      document.getElementById('tx-page-info').textContent = 'Page ' + TX_PAGE + ' of ' + TX_TOTAL_PAGES;
+      document.getElementById('tx-prev').disabled = TX_PAGE <= 1;
+      document.getElementById('tx-next').disabled = TX_PAGE >= TX_TOTAL_PAGES;
+    })
+    .withFailureHandler(function(err) {
+      TX_IS_LOADING = false;
+      var tbody2 = document.getElementById('tx-tbody');
+      if (tbody2) tbody2.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--accent-red);font-size:13px;">Gagal memuat data: ' + err.message + '</td></tr>';
+    })
+    .getLedgerData(TX_PAGE, TX_PER_PAGE);
+}
+
+function txChangePage(dir) {
+  var next = TX_PAGE + dir;
+  if (next < 1 || next > TX_TOTAL_PAGES) return;
+  TX_PAGE = next;
+  renderTxTable();
+}
+
+function txDeleteRow(rowIndex, name) {
+  if (!confirm('Hapus transaksi "' + name + '"?\nAksi ini tidak dapat dibatalkan.')) return;
+  if (typeof google === 'undefined' || !google.script) return;
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.ok) {
+        renderTxTable();
+        google.script.run
+          .withSuccessHandler(renderCashflowChart)
+          .getCashflowFromLedger();
+      } else {
+        alert('Gagal hapus: ' + (res ? res.msg : 'error tidak diketahui'));
+      }
+    })
+    .withFailureHandler(function(err) { alert('Error: ' + err.message); })
+    .deleteLedgerRow(rowIndex);
+}
+
+// ── MODAL EDIT ENTRY ─────────────────────────────────────────
+function txEditRow(rowIndex, name, date, badge, type, account, amount) {
+  var modalId = 'edit-entry-modal';
+  var existing = document.getElementById(modalId);
+  if (existing) existing.remove();
+
+  // Convert dd-MM-yyyy → yyyy-MM-dd for <input type="date">
+  var dateParts = (date || '').split('-');
+  var isoDate = dateParts.length === 3 ? dateParts[2] + '-' + dateParts[1] + '-' + dateParts[0] : date;
+
+  var modal = document.createElement('div');
+  modal.id = modalId;
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)';
+  modal.innerHTML = [
+    '<div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:20px;padding:32px;width:90%;max-width:480px;font-family:var(--font-base);">',
+    '<h2 style="font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:20px;">✏️ Edit Entry</h2>',
+    _field('Nama Transaksi','text','ee-name','',name || ''),
+    _field('Tanggal','date','ee-date','',isoDate),
+    _field('Kategori','text','ee-badge','food / salary / transfer / dll',badge || ''),
+    '<label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Tipe</label>',
+    '<select id="ee-type" onchange="_eeTypeChange()" style="width:100%;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--border-color);border-radius:10px;color:var(--text-primary);font-family:var(--font-base);font-size:14px;margin-bottom:16px;">',
+    '<option value="INCOME"'  + (type === 'INCOME'   ? ' selected' : '') + '>INCOME</option>',
+    '<option value="EXPENSE"' + (type === 'EXPENSE'  ? ' selected' : '') + '>EXPENSE</option>',
+    '<option value="TRANSFER"'+ (type === 'TRANSFER' ? ' selected' : '') + '>TRANSFER</option>',
+    '</select>',
+    _field('Akun Sumber','text','ee-account','Cash / SeaBank / Gopay / dll',account || ''),
+    '<div id="ee-to-wrap" style="display:' + (type === 'TRANSFER' ? 'block' : 'none') + ';">',
+    _field('Akun Tujuan','text','ee-account-to','Akun penerima transfer',''),
+    '</div>',
+    _field('Jumlah (Rp)','number','ee-amount','0', String(amount || 0)),
+    '<div style="display:flex;gap:12px;margin-top:8px;">',
+    '<button onclick="txSubmitEdit(' + rowIndex + ')" id="ee-save-btn" style="flex:1;padding:12px;background:linear-gradient(135deg,var(--accent-blue),#005f8a);border:none;border-radius:10px;color:#fff;font-family:var(--font-base);font-size:13px;font-weight:800;cursor:pointer;">Simpan Perubahan</button>',
+    '<button onclick="document.getElementById(\'' + modalId + '\').remove()" style="flex:1;padding:12px;background:var(--bg-surface);border:1px solid var(--border-color);border-radius:10px;color:var(--text-secondary);font-family:var(--font-base);font-size:13px;font-weight:600;cursor:pointer;">Batal</button>',
+    '</div></div>'
+  ].join('');
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+}
+
+function _eeTypeChange() {
+  var sel   = document.getElementById('ee-type');
+  var wrap  = document.getElementById('ee-to-wrap');
+  var badge = document.getElementById('ee-badge');
+  if (!sel) return;
+  if (sel.value === 'TRANSFER') {
+    if (wrap)  wrap.style.display = 'block';
+    if (badge && badge.value.trim() === '') badge.value = 'transfer';
+  } else {
+    if (wrap) wrap.style.display = 'none';
+    if (badge && badge.value.trim() === 'transfer') badge.value = '';
+  }
+}
+
+function txSubmitEdit(rowIndex) {
+  var name    = (document.getElementById('ee-name').value    || '').trim();
+  var date    = (document.getElementById('ee-date').value    || '').trim();
+  var badge   = (document.getElementById('ee-badge').value   || '').trim().toLowerCase();
+  var type    = (document.getElementById('ee-type').value    || 'EXPENSE');
+  var account = (document.getElementById('ee-account').value || '').trim();
+  var amount  = parseFloat(document.getElementById('ee-amount').value) || 0;
+
+  if (!name || !date || !badge || !account || !amount) {
+    alert('Harap lengkapi semua kolom.'); return;
+  }
+  if (typeof google === 'undefined' || !google.script) {
+    alert('Tidak terhubung ke GAS.'); return;
+  }
+
+  var btn = document.getElementById('ee-save-btn');
+  if (btn) { btn.textContent = 'Menyimpan…'; btn.disabled = true; }
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      var m = document.getElementById('edit-entry-modal');
+      if (m) m.remove();
+      if (res && res.ok) {
+        TX_PAGE = 1;
+        renderTxTable();
+        google.script.run
+          .withSuccessHandler(renderCashflowChart)
+          .getCashflowFromLedger();
+      } else {
+        alert('Gagal simpan: ' + (res ? res.msg : 'error tidak diketahui'));
+      }
+    })
+    .withFailureHandler(function(err) {
+      var m = document.getElementById('edit-entry-modal');
+      if (m) m.remove();
+      alert('Error: ' + err.message);
+    })
+    .updateLedgerRow({ rowIndex: rowIndex, name: name, date: date, badge: badge, type: type, account: account, amount: amount });
+}
+
+
+
+// ── MODAL NEW ENTRY ───────────────────────────────────────────
+function openNewEntry() {
+  var existing = document.getElementById('new-entry-modal');
+  if (existing) {
+    existing.style.display = 'flex';
+    resetEntryForm();
+    return;
+  }
+
+  var modal = document.createElement('div');
+  modal.id = 'new-entry-modal';
+  modal.style.cssText = [
+    'position:fixed;inset:0;z-index:9999',
+    'display:flex;align-items:center;justify-content:center',
+    'background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)'
+  ].join(';');
+  modal.innerHTML = [
+    '<div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:20px;',
+    'padding:32px;width:90%;max-width:480px;font-family:var(--font-base);">',
+    '<h2 style="font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:20px;">+ New Entry</h2>',
+    _field('Nama Transaksi','text','ne-name','Contoh: Gaji Juli 2025',''),
+    _field('Tanggal','date','ne-date','',''),
+    _field('Kategori','text','ne-badge','food / salary / transfer / dll',''),
+    '<label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;',
+    'color:var(--text-muted);margin-bottom:6px;">Tipe</label>',
+    '<select id="ne-type" onchange="_neTypeChange()" style="width:100%;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--border-color);',
+    'border-radius:10px;color:var(--text-primary);font-family:var(--font-base);font-size:14px;margin-bottom:16px;">',
+    '<option value="INCOME">INCOME</option><option value="EXPENSE" selected>EXPENSE</option><option value="TRANSFER">TRANSFER</option>',
+    '</select>',
+    _field('Akun Sumber','text','ne-account','Cash / SeaBank / Gopay / dll',''),
+    '<div id="ne-to-wrap" style="display:none;">',
+    _field('Akun Tujuan','text','ne-account-to','Akun penerima transfer',''),
+    '</div>',
+    _field('Jumlah (Rp)','number','ne-amount','0',''),
+    '<div style="display:flex;gap:12px;margin-top:8px;">',
+    '<button id="ne-save-btn" onclick="submitNewEntry()" style="flex:1;padding:12px;background:linear-gradient(135deg,var(--accent-blue),#0077b6);',
+    'border:none;border-radius:10px;color:#fff;font-family:var(--font-base);font-size:13px;font-weight:800;cursor:pointer;">Simpan</button>',
+    '<button onclick="closeNewEntry()" style="flex:1;padding:12px;background:var(--bg-surface);border:1px solid var(--border-color);',
+    'border-radius:10px;color:var(--text-secondary);font-family:var(--font-base);font-size:13px;font-weight:600;cursor:pointer;">Batal</button>',
+    '</div></div>'
+  ].join('');
+
+  document.body.appendChild(modal);
+  resetEntryForm();
+  modal.addEventListener('click', function(e) { if (e.target === modal) closeNewEntry(); });
+}
+
+function _neTypeChange() {
+  var sel   = document.getElementById('ne-type');
+  var wrap  = document.getElementById('ne-to-wrap');
+  var badge = document.getElementById('ne-badge');
+  if (!sel) return;
+  if (sel.value === 'TRANSFER') {
+    if (wrap)  wrap.style.display = 'block';
+    if (badge && badge.value.trim() === '') badge.value = 'transfer';
+  } else {
+    if (wrap)  wrap.style.display = 'none';
+    if (badge && badge.value.trim() === 'transfer') badge.value = '';
+  }
+}
+
+function resetEntryForm() {
+  var today = new Date();
+  var yyyy  = today.getFullYear();
+  var mm    = String(today.getMonth()+1).padStart(2,'0');
+  var dd    = String(today.getDate()).padStart(2,'0');
+
+  var nameEl    = document.getElementById('ne-name');
+  var dateEl    = document.getElementById('ne-date');
+  var badgeEl   = document.getElementById('ne-badge');
+  var typeEl    = document.getElementById('ne-type');
+  var accountEl = document.getElementById('ne-account');
+  var accountToEl = document.getElementById('ne-account-to');
+  var amountEl  = document.getElementById('ne-amount');
+  var toWrap    = document.getElementById('ne-to-wrap');
+  var btn       = document.getElementById('ne-save-btn');
+
+  if (nameEl)      nameEl.value    = '';
+  if (dateEl)      dateEl.value    = yyyy + '-' + mm + '-' + dd;
+  if (badgeEl)     badgeEl.value   = '';
+  if (typeEl)      typeEl.value    = 'EXPENSE';
+  if (accountEl)   accountEl.value = '';
+  if (accountToEl) accountToEl.value = '';
+  if (amountEl)    amountEl.value  = '';
+  if (toWrap)      toWrap.style.display = 'none';
+  if (btn)         { btn.textContent = 'Simpan'; btn.disabled = false; }
+}
+
+function _field(label, type, id, placeholder, val) {
+  return '<label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;'
+    + 'color:var(--text-muted);margin-bottom:6px;">' + label + '</label>'
+    + '<input type="' + type + '" id="' + id + '" placeholder="' + placeholder + '" value="' + val + '"'
+    + ' style="width:100%;box-sizing:border-box;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--border-color);'
+    + 'border-radius:10px;color:var(--text-primary);font-family:var(--font-base);font-size:14px;margin-bottom:16px;"/>';
+}
+
+function closeNewEntry() {
+  var m = document.getElementById('new-entry-modal');
+  if (m) m.style.display = 'none';
+}
+
+function submitNewEntry() {
+  var name      = (document.getElementById('ne-name').value    || '').trim();
+  var date      = (document.getElementById('ne-date').value    || '').trim();
+  var badge     = (document.getElementById('ne-badge').value   || '').trim().toLowerCase();
+  var type      = (document.getElementById('ne-type').value    || 'EXPENSE');
+  var account   = (document.getElementById('ne-account').value || '').trim();
+  var accountTo = (document.getElementById('ne-account-to')    ? (document.getElementById('ne-account-to').value || '').trim() : '');
+  var amount    = parseFloat(document.getElementById('ne-amount').value) || 0;
+
+  if (!name || !date || !badge || !account || !amount) {
+    alert('Harap lengkapi semua kolom terlebih dahulu.'); return;
+  }
+  if (type === 'TRANSFER' && !accountTo) {
+    alert('Harap isi Akun Tujuan untuk Transfer.'); return;
+  }
+  if (typeof google === 'undefined' || !google.script) {
+    alert('Tidak terhubung ke GAS.'); return;
+  }
+
+  var btn = document.getElementById('ne-save-btn');
+  if (btn) { btn.textContent = 'Menyimpan…'; btn.disabled = true; }
+
+  function _onSuccess(res) {
+    if (res && res.ok) {
+      closeNewEntry();
+      resetEntryForm();
+      TX_PAGE = 1;
+      renderTxTable();
+      google.script.run
+        .withSuccessHandler(renderCashflowChart)
+        .getCashflowFromLedger();
+    } else {
+      alert('Gagal simpan: ' + (res ? res.msg : 'error tidak diketahui'));
+      if (btn) { btn.textContent = 'Simpan'; btn.disabled = false; }
+    }
+  }
+  function _onFail(err) {
+    alert('Error: ' + err.message);
+    if (btn) { btn.textContent = 'Simpan'; btn.disabled = false; }
+  }
+
+  if (type === 'TRANSFER') {
+    // Transfer disimpan sebagai 1 baris dengan akun format "Sumber → Tujuan"
+    google.script.run
+      .withSuccessHandler(_onSuccess)
+      .withFailureHandler(_onFail)
+      .addLedgerRow({ name: name, date: date, badge: badge, type: 'TRANSFER', account: account + ' → ' + accountTo, amount: amount });
+  } else {
+    google.script.run
+      .withSuccessHandler(_onSuccess)
+      .withFailureHandler(_onFail)
+      .addLedgerRow({ name: name, date: date, badge: badge, type: type, account: account, amount: amount });
+  }
+}
+
+// ──────────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function() {
+  showLoading();
+  var start = Date.now();
+  loadOverviewData(function() {
+    var minDelay = Math.max(0, 800 - (Date.now() - start));
+    setTimeout(hideLoading, minDelay);
+  });
+});
+
+// ──────────────────────────────────────────────
+//  INSIGHT AI — Analysis Engine
+// ──────────────────────────────────────────────
+var AI_INSIGHT_DATA = null;
+var AI_PENDING = 0;
+var AI_FINISHED = false;
+
+function runInsightAnalysis() {
+  var btn = document.getElementById('ai-analyze-btn');
+  var idle = document.getElementById('ai-idle-body');
+  var analyzing = document.getElementById('ai-analyzing');
+  var results = document.getElementById('ai-results-body');
+  var badge = document.getElementById('ai-status-badge');
+
+  if (btn) { btn.disabled = true; btn.textContent = 'SCANNING...'; }
+  if (idle) idle.style.display = 'none';
+  if (analyzing) analyzing.classList.add('visible');
+  if (results) results.style.display = 'none';
+  if (badge) { badge.textContent = 'PROCESSING'; badge.classList.add('active'); }
+
+  AI_INSIGHT_DATA = { summary: null, budget: null, cashflow: null };
+  AI_PENDING = 3;
+  AI_FINISHED = false;
+
+  // Safety timeout 6s
+  setTimeout(function() {
+    if (!AI_FINISHED) {
+      AI_FINISHED = true;
+      _renderInsightResults();
+    }
+  }, 6000);
+
+  if (typeof google === 'undefined' || !google.script) {
+    // Demo fallback
+    AI_INSIGHT_DATA.summary = { totalIncome: 15000000, totalExpense: 4500000, netBalance: 10500000, balanceChange: 5.2, incomeChange: 8.1, expenseChange: -2.3 };
+    AI_INSIGHT_DATA.budget  = { totalSpent: 4500000, totalBudget: 4500000, categories: [
+      { name: 'food', spent: 1500000 }, { name: 'utilities', spent: 1200000 },
+      { name: 'transport', spent: 800000 }, { name: 'entertainment', spent: 700000 }, { name: 'health', spent: 300000 }
+    ]};
+    AI_INSIGHT_DATA.cashflow = { labels: ['Jun 25','Jul 25'], incomes: [12000000,15000000], expenses: [5000000,4500000] };
+    AI_FINISHED = true;
+    _renderInsightResults();
+    return;
+  }
+
+  function aiDone() {
+    AI_PENDING--;
+    if (AI_PENDING <= 0 && !AI_FINISHED) {
+      AI_FINISHED = true;
+      _renderInsightResults();
+    }
+  }
+
+  google.script.run
+    .withSuccessHandler(function(d) { AI_INSIGHT_DATA.summary  = d; aiDone(); })
+    .withFailureHandler(function()  { aiDone(); })
+    .getSummaryData();
+
+  google.script.run
+    .withSuccessHandler(function(d) { AI_INSIGHT_DATA.budget   = d; aiDone(); })
+    .withFailureHandler(function()  { aiDone(); })
+    .getExpenseBudget();
+
+  google.script.run
+    .withSuccessHandler(function(d) { AI_INSIGHT_DATA.cashflow = d; aiDone(); })
+    .withFailureHandler(function()  { aiDone(); })
+    .getCashflowFromLedger();
+}
+
+function _renderInsightResults() {
+  var btn = document.getElementById('ai-analyze-btn');
+  var analyzing = document.getElementById('ai-analyzing');
+  var results = document.getElementById('ai-results-body');
+  var badge = document.getElementById('ai-status-badge');
+
+  if (analyzing) analyzing.classList.remove('visible');
+  if (results) results.style.display = 'block';
+  if (btn) { btn.disabled = false; btn.textContent = 'RE-ANALYZE PROTOCOL \u26A1'; }
+
+  var s  = AI_INSIGHT_DATA.summary  || {};
+  var b  = AI_INSIGHT_DATA.budget   || {};
+  var cf = AI_INSIGHT_DATA.cashflow || {};
+
+  var income  = Number(s.totalIncome)  || 0;
+  var expense = Number(s.totalExpense) || 0;
+  var net     = Number(s.netBalance)   || 0;
+  var budget  = Number(b.totalBudget)  || 0;   // total budget otomatis dari getExpenseBudget
+
+  // ── Financial Ratios──
+  var expenseRatio = income > 0 ? Math.round((expense / income) * 1000) / 10 : 0;
+  var netRatio     = income > 0 ? Math.round((net     / income) * 1000) / 10 : 0;
+
+  // Health Status
+  var healthStatus, healthClass, healthDesc;
+  if (income === 0) {
+    healthStatus = 'NO DATA'; healthClass = 'waspada';
+    healthDesc   = 'Belum ada data transaksi yang cukup untuk evaluasi.';
+  } else if (expenseRatio < 50) {
+    healthStatus = 'AMAN'; healthClass = 'aman';
+    healthDesc   = 'Kondisi keuangan Anda sangat sehat. Pengeluaran terkendali dengan baik dan surplus cukup besar.';
+  } else if (expenseRatio < 70) {
+    healthStatus = 'AMAN'; healthClass = 'aman';
+    healthDesc   = 'Kondisi keuangan Anda sehat. Pengeluaran berada dalam rentang wajar.';
+  } else if (expenseRatio < 85) {
+    healthStatus = 'WASPADA'; healthClass = 'waspada';
+    healthDesc   = 'Pengeluaran mendekati batas kritis. Evaluasi kategori pengeluaran terbesar.';
+  } else {
+    healthStatus = 'KRITIS'; healthClass = 'kritis';
+    healthDesc   = 'Pengeluaran melebihi ambang aman. Diperlukan tindakan segera untuk memangkas biaya.';
+  }
+
+  // ── Budget Analysis──
+  var cats = (b.categories || []).slice(0, 5);
+  var budgetLines = '';
+  if (cats.length === 0) {
+    budgetLines = '<span class="line-item">Belum ada data pengeluaran bulan ini.</span>';
+  } else {
+    cats.forEach(function(c) {
+      // Persentase: pengeluaran kategori vs total pengeluaran bulan ini
+      var catPctOfTotal = expense > 0 ? Math.round((c.spent / expense) * 1000) / 10 : 0;
+      var cls = catPctOfTotal > 30 ? 'highlight-red' : catPctOfTotal > 15 ? 'highlight-orange' : 'highlight-green';
+      budgetLines += '<span class="line-item">';
+      budgetLines += '<span class="' + cls + '">' + c.name.toUpperCase() + '</span>: ';
+      budgetLines += formatRupiah(c.spent) + ' (' + catPctOfTotal + '% dari total pengeluaran)';
+      budgetLines += '</span>';
+    });
+    if (expenseRatio < 70) {
+      budgetLines += '<span class="line-item" style="margin-top:6px">Seluruh realisasi pengeluaran per kategori berhasil dijaga di bawah ambang batas anggaran.</span>';
+    } else {
+      budgetLines += '<span class="line-item" style="margin-top:6px;color:#ff4d6d">Beberapa kategori melebihi batas ideal. Pertimbangkan pemotongan segera.</span>';
+    }
+  }
+
+  // ── Cashflow Trend — gunakan incomeChange & expenseChange dari getSummaryData (sama dengan Overview) ──
+  var trendLine = '';
+  var sumData   = AI_INSIGHT_DATA.summary;
+  if (sumData && (sumData.incomeChange !== undefined || sumData.expenseChange !== undefined)) {
+    var incTrend = sumData.incomeChange  || 0;
+    var expTrend = sumData.expenseChange || 0;
+    var incCls = incTrend >= 0 ? 'highlight-green' : 'highlight-red';
+    var expCls = expTrend <= 0 ? 'highlight-green' : 'highlight-orange';
+    trendLine  = '<span class="line-item">Income bulan ini: <span class="' + incCls + '">' + (incTrend >= 0 ? '+' : '') + incTrend + '%</span> vs bulan lalu.</span>';
+    trendLine += '<span class="line-item">Pengeluaran bulan ini: <span class="' + expCls + '">' + (expTrend >= 0 ? '+' : '') + expTrend + '%</span> vs bulan lalu.</span>';
+  } else {
+    trendLine = '<span class="line-item">Data perbandingan bulan lalu belum tersedia.</span>';
+  }
+
+  // ── AI Recommendations──
+  var recs = [];
+  if (expenseRatio > 70) recs.push('<span class="highlight-orange">Batasi Pengeluaran Non-Esensial</span> — rasio pengeluaran (' + expenseRatio + '%) melebihi batas aman 70%.');
+  if (expenseRatio <= 70 && expenseRatio > 0) recs.push('<span class="highlight-green">Pertahankan Efisiensi</span> — rasio pengeluaran (' + expenseRatio + '%) berada dalam zona sehat.');
+  if (netRatio > 30) recs.push('<span class="highlight-green">Surplus Kuat</span> (' + netRatio + '% dari income) — pertimbangkan alokasi ke instrumen investasi produktif.');
+  if (netRatio > 0 && netRatio <= 30) recs.push('<span class="highlight-orange">Optimasi Likuiditas</span> — surplus bersih (' + netRatio + '%) masih di bawah target ideal 30%.');
+  if (cats.length > 0) {
+    var topCat = cats[0];
+    var topPct = income > 0 ? Math.round((topCat.spent / income) * 1000) / 10 : 0;
+    if (topPct > 20) recs.push('<span class="highlight-orange">' + topCat.name.toUpperCase() + '</span> adalah pengeluaran terbesar (' + topPct + '%). Evaluasi dan optimalkan kategori ini.');
+  }
+  if (recs.length === 0) recs.push('Tidak ada data yang cukup untuk menghasilkan rekomendasi spesifik.');
+
+  var recLines = recs.map(function(r) { return '<span class="line-item">' + r + '</span>'; }).join('');
+
+  // ── Timestamp──
+  var now = new Date();
+  var timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  if (badge) {
+    badge.innerHTML = '<span class="ai-timestamp">GENERATED: ' + timeStr + '</span>';
+    badge.classList.add('active');
+  }
+
+  // ── Render HTML──
+  results.innerHTML = [
+    '<!-- SECTION 1: Financial Health -->',
+    '<div class="ai-section-block">',
+      '<div class="ai-section-accent ai-section-accent--blue"></div>',
+      '<div class="ai-section-content">',
+        '<div class="ai-section-num">01</div>',
+        '<div class="ai-section-title">Financial Health Overview</div>',
+        '<div class="ai-status-line">Kondisi saat ini: <span class="ai-health-badge ' + healthClass + '">' + healthStatus + '</span></div>',
+        '<div class="ai-section-text">' + healthDesc + '</div>',
+        '<div class="ai-ratio-row">',
+          '<span>Rasio Pengeluaran terhadap Pendapatan:</span> <strong>' + expenseRatio + '%</strong><br>',
+          '<span>Rasio Net Cashflow terhadap Pendapatan:</span> <strong>' + netRatio + '%</strong>',
+        '</div>',
+      '</div>',
+    '</div>',
+
+    '<!-- SECTION 2: Cashflow & Budget -->',
+    '<div class="ai-section-block">',
+      '<div class="ai-section-accent ai-section-accent--green"></div>',
+      '<div class="ai-section-content">',
+        '<div class="ai-section-num">02</div>',
+        '<div class="ai-section-title">Cashflow Intelligence &amp; Budget</div>',
+        '<div class="ai-section-text">' + trendLine + budgetLines + '</div>',
+      '</div>',
+    '</div>',
+
+    '<!-- SECTION 3: AI Recommendation -->',
+    '<div class="ai-section-block">',
+      '<div class="ai-section-accent ai-section-accent--orange"></div>',
+      '<div class="ai-section-content">',
+        '<div class="ai-section-num">03</div>',
+        '<div class="ai-section-title">AI Recommendation <span style="font-size:11px;font-weight:600;color:var(--text-muted)">(Local Override)</span></div>',
+        '<div class="ai-section-text" style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">LOCAL PROTOCOL ACTIVE: Analisis berbasis data ledger Anda secara real-time.</div>',
+        '<div class="ai-section-text">' + recLines + '</div>',
+      '</div>',
+    '</div>'
+  ].join('');
+}
+</script>
+
 </body>
 </html>
